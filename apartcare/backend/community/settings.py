@@ -2,8 +2,18 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
+
+
+load_dotenv()
+
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+if not SECRET_KEY:
+    raise Exception("SECRET_KEY not found in environment variables")
+
+
+DEBUG =os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -25,6 +35,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+
+AUTHENTICATION_BACKENDS = [
+    'apps.accounts.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 
 # Application definition
 
@@ -37,6 +69,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'apps.api',
     
     'corsheaders',
