@@ -2,6 +2,10 @@ from rest_framework import serializers
 from .models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from apps.admin_panel.models import StaffProfile,AdminResident_Profile
+from apps.apartment.models import Flat,Block
+from datetime import date
+
 
 class AdminCreateUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only = True)
@@ -23,6 +27,23 @@ class AdminCreateUserSerializer(serializers.ModelSerializer):
             password=password,
             **validated_data
         )
+
+        if user.role == 'STAFF':
+            StaffProfile.objects.create(
+                user=user,
+                designation="Not Assigned",
+                monthly_salary=0,
+                joining_date=date.today(),
+                status="ACTIVE"
+            )
+        elif user.role == 'RESIDENT':
+            AdminResident_Profile.objects.create(
+                user=user,
+                
+                created_date = date.today(),
+                status="ACTIVE"
+            )
+
         return user 
     
 class LoginSerializer(serializers.Serializer):

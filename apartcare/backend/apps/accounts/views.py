@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import AdminCreateUserSerializer,LoginSerializer
-from .permissions import Isadmin
+from .permissions import IsAdmin
 from rest_framework.permissions import AllowAny ,IsAuthenticated
 
 
@@ -18,7 +18,7 @@ class SomeProtectedAPIView(APIView):
         })
 
 class AdminCreateUserAPIView(APIView):
-    permission_classes = [Isadmin]
+    permission_classes = [IsAuthenticated,IsAdmin]
 
     def post(self,request):
         serializer  =  AdminCreateUserSerializer(data = request.data)
@@ -50,4 +50,5 @@ class LoginAPIView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
 
