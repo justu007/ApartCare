@@ -18,3 +18,6 @@ class IsStaff(BasePermission):
         return(
             request.user.is_authenticated and request.user.role =='STAFF'
         )
+class IsSuperAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return(request.user.is_authenticated and request.user.role =='SUPER_ADMIN')

@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from apps.accounts.models import User
 from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
 from .models import AdminResident_Profile,StaffProfile
 
 class AdminStaffListSerializer(serializers.ModelSerializer):

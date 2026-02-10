@@ -74,7 +74,8 @@ INSTALLED_APPS = [
     'apps.admin_panel',
     'corsheaders',
     'channels',
-    'apps.apartment'
+    'apps.apartment',
+    'apps.webapp',
 ]
 
 MIDDLEWARE = [

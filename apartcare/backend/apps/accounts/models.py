@@ -10,9 +10,10 @@ class User(AbstractUser):
     phone = models.BigIntegerField(unique=True,null=True,blank=True)
 
     ROLE_CHOICES = (
-        ('ADMIN', 'Admin'),
-        ('RESIDENT', 'Resident'),
-        ('STAFF', 'Staff'),
+    ('SUPER_ADMIN', 'Super Admin'),
+    ('ADMIN', 'Admin'),
+    ('RESIDENT', 'Resident'),
+    ('STAFF', 'Staff'),
     )
     role = models.CharField(max_length=25, choices=ROLE_CHOICES)
 
