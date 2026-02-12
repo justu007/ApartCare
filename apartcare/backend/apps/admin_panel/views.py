@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework.response import Response
-from .permissions import IsAdmin
+from apps.accounts.permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
 from apps.accounts.models import User
 from .models import StaffProfile,AdminResident_Profile
@@ -134,8 +134,32 @@ class AdminUpdateStaffProfileAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(
+                
                 {"message":"staff details updated successfully",
                  "data" : serializer.data
-                 }
+                }
             )
         return Response(serializer.errors,status=400)
+    
+
+class AdminUpdateResidentProfileAPIView(APIView):
+    def put (self,request,user_id):
+        try:
+            resident_profile = AdminResident_Profile.objects.get(user__id=user_id)
+        except AdminResident_Profile.DoesNotExist:
+            return Response(
+                {"error" : "REsidnt profile doesnt exists"},status=404
+            )
+        serializer = AdminStaffListSerializer(
+            resident_profile,
+            data = request.data,
+            partial = True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message" : "resident profile updated successfully",
+                 "data" : serializer.data}
+
+            )
+        return Response(serializer.errors,status=404)

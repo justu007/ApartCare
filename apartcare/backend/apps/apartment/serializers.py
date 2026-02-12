@@ -17,7 +17,7 @@ class AdminCreateCommunity(serializers.ModelSerializer):
 
 class AdminCreateBlock(serializers.ModelSerializer):
     class Meta:
-        model = Community
+        model = Block
         fields = [
             'id',
             'name',
@@ -27,7 +27,7 @@ class AdminCreateBlock(serializers.ModelSerializer):
 
 class AdminCreateFlat(serializers.ModelSerializer):
     class Meta:
-        model = Community
+        model = Flat
         fields = [
             'id',
             'name',

@@ -14,7 +14,7 @@ class Block(models.Model):
     created_at = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.community.name} - {self.name}"
+        return f"{self.name}"
 
     
 class Flat(models.Model):

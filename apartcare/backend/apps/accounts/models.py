@@ -17,12 +17,6 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=25, choices=ROLE_CHOICES)
 
-    # flat = models.ForeignKey(
-    #     'apartment.Flat',
-    #     on_delete=models.SET_NULL,
-    #     null=True,
-    #     blank=True
-    # )
     is_active =models.BooleanField(default=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

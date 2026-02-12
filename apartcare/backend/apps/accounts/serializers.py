@@ -22,12 +22,10 @@ class AdminCreateUserSerializer(serializers.ModelSerializer):
         
     def create(self, validated_data):
         password = validated_data.pop('password')
-
         user = User.objects.create_user(
             password=password,
             **validated_data
         )
-
         if user.role == 'STAFF':
             StaffProfile.objects.create(
                 user=user,
@@ -39,7 +37,6 @@ class AdminCreateUserSerializer(serializers.ModelSerializer):
         elif user.role == 'RESIDENT':
             AdminResident_Profile.objects.create(
                 user=user,
-                
                 created_date = date.today(),
                 status="ACTIVE"
             )

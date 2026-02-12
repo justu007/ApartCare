@@ -100,3 +100,12 @@ class AdminUpdateStaffProfile(serializers.ModelSerializer):
             'monthly_salary',
             'status'
         ]
+class AdminUpdateResidentProfile(serializers.ModelSerializer):
+    class Meta:
+        model= AdminResident_Profile
+        fields = [
+
+            'flat',
+            'block',
+            'status'
+        ]
