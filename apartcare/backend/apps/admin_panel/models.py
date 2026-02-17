@@ -46,4 +46,3 @@ class StaffProfile(models.Model):
         return self.user.email
     
     
-

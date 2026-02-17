@@ -2,6 +2,7 @@ from rest_framework import serializers
 from apps.accounts.models import User
 from django.contrib.auth import authenticate
 from .models import AdminResident_Profile,StaffProfile
+from apps.apartment.models import Flat, Block
 
 class AdminStaffListSerializer(serializers.ModelSerializer):
 
@@ -101,6 +102,8 @@ class AdminUpdateStaffProfile(serializers.ModelSerializer):
             'status'
         ]
 class AdminUpdateResidentProfile(serializers.ModelSerializer):
+
+
     class Meta:
         model= AdminResident_Profile
         fields = [
@@ -109,3 +112,36 @@ class AdminUpdateResidentProfile(serializers.ModelSerializer):
             'block',
             'status'
         ]
+    def validate(self,data):
+        flat = data.get("flat")
+        if flat and flat.occupied:
+            raise serializers.ValidationError(
+                {'flat' : "flat is occupied"}
+        )
+
+        return data
+    
+        
+    def update(self,instance,validated_data):
+        old_flat = instance.flat
+        new_flat = validated_data.get('flat')
+
+        if new_flat:
+            instance.block = new_flat.block
+            
+
+        elif 'flat' in validated_data and new_flat is None:
+            validated_data['block'] = None
+
+
+        instance = super().update(instance,validated_data)
+        
+        if old_flat and old_flat != instance.flat:
+            old_flat.occupied = False
+            old_flat.save()
+
+        if instance.flat:
+            instance.flat.occupied = True
+            instance.flat.save()
+
+        return instance 

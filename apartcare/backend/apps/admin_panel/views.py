@@ -6,7 +6,7 @@ from apps.accounts.permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
 from apps.accounts.models import User
 from .models import StaffProfile,AdminResident_Profile
-from .serializers import AdminResidentListSerializer,AdminStaffListSerializer,AdminUpdateUserInfo,AdminUpdateStaffProfile
+from .serializers import *
 
 # Create your views here.
 
@@ -150,7 +150,7 @@ class AdminUpdateResidentProfileAPIView(APIView):
             return Response(
                 {"error" : "REsidnt profile doesnt exists"},status=404
             )
-        serializer = AdminStaffListSerializer(
+        serializer = AdminUpdateResidentProfile(
             resident_profile,
             data = request.data,
             partial = True
@@ -158,7 +158,7 @@ class AdminUpdateResidentProfileAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(
-                {"message" : "resident profile updated successfully",
+                {"message" : "flat assigned successfully",
                  "data" : serializer.data}
 
             )

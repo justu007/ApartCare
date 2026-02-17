@@ -22,17 +22,20 @@ class CreateCommunityAdmin(serializers.ModelSerializer):
         ]
 
     def create(self,validated_data):
-        community = Community.objects.create(
-            name = validated_data['name'],
-            address = validated_data['address']
 
-        )
 
         community_admin = User.objects.create_admin_user(
             name = validated_data['admin_name'],
             email = validated_data['admin_email'],
             password = validated_data['admin_password'],
             role = 'ADMIN'
+        )
+
+        community = Community.objects.create(
+            name = validated_data['name'],
+            address = validated_data['address'],
+            admin = community_admin
+
         )
     
 

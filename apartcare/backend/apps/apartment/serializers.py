@@ -4,16 +4,16 @@ from .models import Community,Block,Flat
 from django.contrib.auth import authenticate
 from apps.admin_panel.models import AdminResident_Profile,StaffProfile
 
-class AdminCreateCommunity(serializers.ModelSerializer):
-    class Meta:
-        model = Community
-        fields = [
-            'id',
-            'name',
-            'address',
-            'created_at'
-        ]
-        read_only_fields = ["id", "created_at"]
+# class AdminCreateCommunity(serializers.ModelSerializer):
+#     class Meta:
+#         model = Community
+#         fields = [
+#             'id',
+#             'name',
+#             'address',
+#             'created_at'
+#         ]
+#         read_only_fields = ["id", "created_at"]
 
 class AdminCreateBlock(serializers.ModelSerializer):
     class Meta:

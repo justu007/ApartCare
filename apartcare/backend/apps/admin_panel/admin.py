@@ -4,10 +4,10 @@ from .models import AdminResident_Profile,StaffProfile
 # Register your models here.
 @admin.register(AdminResident_Profile)
 class ResidentProfileAdmin(admin.ModelAdmin):
-    # 1. WHAT TO SHOW
+
     list_display = ('user_email', 'get_name', 'flat', 'block', 'status', 'created_date')
     
-    # 2. FILTERS (Sidebar)
+    # 2. FILTERS (Sidebar) 
     list_filter = ('status', 'block')
     
     # 3. SEARCH (The Magic Part ✨)

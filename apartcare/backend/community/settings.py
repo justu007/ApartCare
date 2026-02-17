@@ -37,7 +37,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.accounts.authentication.CookieJWTAuthentication', 
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -46,9 +46,15 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    'AUTH_COOKIE':'access_token',          
+    'AUTH_COOKIE_REFRESH': 'refresh_token', 
+    'AUTH_COOKIE_SECURE': False,            
+    'AUTH_COOKIE_SAMESITE': 'Lax',          
 }
 
 
@@ -76,6 +82,8 @@ INSTALLED_APPS = [
     'channels',
     'apps.apartment',
     'apps.webapp',
+    'apps.resident',
+    'apps.staff'
 ]
 
 MIDDLEWARE = [
@@ -91,7 +99,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'community.urls'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",
+]
 
 TEMPLATES = [
     {
