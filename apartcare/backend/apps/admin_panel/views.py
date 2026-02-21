@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from apps.accounts.models import User
 from .models import StaffProfile,AdminResident_Profile
 from .serializers import *
+from .pagination import CustomPagination
+
 
 # Create your views here.
 
@@ -18,21 +20,14 @@ class TestAdmin(APIView):
         return Response({
             "message": "Admin access working",
             "user": request.user.email,
-            "role": request.user.role
+            "role": request.user.role,
+            "community": request.user.community.id if request.user.community else None
         })
 
 class AdminResidentListAPIView(APIView):
-
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request):
-
-        page = int(request.GET.get('page', 1))
-        limit = int(request.GET.get('limit', 10))
-
-        start = (page - 1) * limit
-        end = start + limit
-
         residents = User.objects.filter(
             role='RESIDENT'
         ).select_related(
@@ -41,85 +36,90 @@ class AdminResidentListAPIView(APIView):
             'resident_profile__flat__block'
         )
 
-        total_count = residents.count()
-
-        paginated_residents = residents[start:end]
+        paginator = CustomPagination()
+        
+        paginated_residents = paginator.paginate_queryset(residents, request)
 
         serializer = AdminResidentListSerializer(
             paginated_residents,
             many=True
         )
 
-        return Response({
-            "total": total_count,
-            "page": page,
-            "limit": limit,
-            "data": serializer.data
-            
-        })
-    
+        return paginator.get_paginated_response(serializer.data)
+
 
 class AdminStaffListAPIView(APIView):
-
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request):
-
-        page = int(request.GET.get('page', 1))
-        limit = int(request.GET.get('limit', 10))
-
-        start = (page - 1) * limit
-        end = start + limit
-
         staffs = User.objects.filter(
             role='STAFF'
         ).select_related(
             'staff_profile',
         )
-        total_count = staffs.count()
 
-        paginated_staff = staffs[start:end]
+        paginator = CustomPagination()
+        
+        paginated_staff = paginator.paginate_queryset(staffs, request)
 
         serializer = AdminStaffListSerializer(
             paginated_staff,
             many=True
         )
 
-        return Response({
-            "total": total_count,
-            "page": page,
-            "limit": limit,
-            "data": serializer.data
-            
-        })
+        return paginator.get_paginated_response(serializer.data)
+    
+
 
 class AdminUpdateUserAPIView(APIView):
+
     def put(self,request,user_id):
+
         try:
-            user = User.objects.get(id = user_id)
+
+            user = User.objects.get(id=user_id, community=request.user.community)
+
         except User.DoesNotExist:
+
             return Response(
+
                 {"error" : "User not found"},
+
                 status=404
+
             )
+
         serializer = AdminUpdateUserInfo(
+
             user,
+
             data=request.data,
+
             partial = True
+
         )
+
         if serializer.is_valid():
+
             serializer.save()
+
             return Response({
+
                 "message" : "user details updated successfully",
+
                 "data" : serializer.data
+
             })
+
         return Response(serializer.errors,status=400)
+
     
 
 class AdminUpdateStaffProfileAPIView(APIView):
     def put(self,request,user_id):
         try:
-            staffprofile = StaffProfile.objects.get(user__id=user_id)
+            staffprofile = StaffProfile.objects.get(user__id=user_id, 
+            user__community=request.user.community)
         except StaffProfile.DoesNotExist:
             return Response(
                 {

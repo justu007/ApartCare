@@ -3,6 +3,7 @@ from django.conf import settings
 class Community(models.Model):
     name = models.CharField(max_length=100, unique=True)
     address = models.TextField()
+    is_active = models.BooleanField(null= True , blank=True)
     created_at = models.DateField(auto_now_add=True)
 
     admin = models.OneToOneField(

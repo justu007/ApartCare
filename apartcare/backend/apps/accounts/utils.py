@@ -2,17 +2,17 @@ from django.conf import settings
 from rest_framework.response import Response
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str = None):
-    # 1. Set the Access Token Cookie
+
     response.set_cookie(
         key=settings.SIMPLE_JWT['AUTH_COOKIE'], 
         value=access_token,
         expires=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
         secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-        httponly=True, # Critical: Javascript cannot read this
+        httponly=True, 
         samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
     )
 
-    # 2. Set the Refresh Token Cookie (if provided)
+   
     if refresh_token:
         response.set_cookie(
             key=settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
@@ -24,6 +24,6 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str =
         )
 
 def clear_auth_cookies(response: Response):
-    # Helper to delete cookies on logout
+
     response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE'])
     response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])

@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from apps.accounts.permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
 from apps.accounts.models import User
-from .serializers import AdminCreateCommunity,AdminCreateBlock,AdminCreateFlat
+from .serializers import AdminCreateBlock,AdminCreateFlat
 
 # class AdminCreateCommunityAPIView(APIView):
 

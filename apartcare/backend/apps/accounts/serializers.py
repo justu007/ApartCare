@@ -17,13 +17,16 @@ class AdminCreateUserSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'role',
-            'password'
+            'password',
+            'community'
         ]
         
     def create(self, validated_data):
+        request = self.context.get("request")
         password = validated_data.pop('password')
         user = User.objects.create_user(
             password=password,
+            community = request.user.community
             **validated_data
         )
         if user.role == 'STAFF':
@@ -59,6 +62,13 @@ class LoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError("User account is disabled")
 
+        if user.role != 'SUPER_ADMIN':
+            if not user.community:
+                raise serializers.ValidationError("User is not assigned to any community.")
+            
+            if user.community.is_active is False:
+                raise serializers.ValidationError("Your community is currently inactive. Please contact your Admin.")
+
         refresh = RefreshToken.for_user(user)
 
         return {
@@ -68,4 +78,5 @@ class LoginSerializer(serializers.Serializer):
             'name': user.name,
             'email': user.email,
             'role': user.role,
+            'community' :user.community
         }

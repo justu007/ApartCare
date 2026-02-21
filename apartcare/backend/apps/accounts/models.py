@@ -16,8 +16,20 @@ class User(AbstractUser):
     ('STAFF', 'Staff'),
     )
     role = models.CharField(max_length=25, choices=ROLE_CHOICES)
-
-    is_active =models.BooleanField(default=True)
+    community = models.ForeignKey(
+        "apartment.Community",
+        on_delete=models.PROTECT,
+        null=True,  
+        blank=True,
+        related_name="users"
+    )
+    ACTIVE_CHOICES = (
+        (True, 'Active'),
+        (False, 'Inactive'),
+    )
+    
+    # Apply choices here
+    is_active = models.BooleanField(choices=ACTIVE_CHOICES, default=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 

@@ -24,7 +24,7 @@ class AdminStaffListSerializer(serializers.ModelSerializer):
     )
 
     status = serializers.CharField(
-        source='staff_profile.status',
+        source='get_is_active_display',
         read_only=True
     )
 
@@ -44,42 +44,14 @@ class AdminStaffListSerializer(serializers.ModelSerializer):
 
 
 class AdminResidentListSerializer(serializers.ModelSerializer):
-
-    flat = serializers.CharField(
-        source='resident_profile.flat.name',
-        read_only=True,
-        allow_null=True
-    )
-
-    block = serializers.CharField(
-        source='resident_profile.block.name',
-        read_only=True,
-        allow_null=True
-    )
-
-    created_date = serializers.DateField(
-        source='resident_profile.created_date',
-        read_only=True
-    )
-
-    status = serializers.CharField(
-        source='resident_profile.status',
-        read_only=True
-    )
+    flat = serializers.CharField(source='resident_profile.flat.name', read_only=True)
+    block = serializers.CharField(source='resident_profile.block.name', read_only=True)
+    created_date = serializers.DateField(source='resident_profile.created_date', read_only=True)
+    status = serializers.CharField(source='get_is_active_display', read_only=True)
 
     class Meta:
         model = User
-        fields = [
-            'id',
-            'name',
-            'email',
-            'phone',
-            'flat',
-            'block',
-            'created_date',
-            'status'
-        ]
-
+        fields = ['id', 'name', 'email', 'phone', 'flat', 'block', 'created_date', 'status']
 
 class AdminUpdateUserInfo(serializers.ModelSerializer):
     class Meta:
@@ -88,11 +60,13 @@ class AdminUpdateUserInfo(serializers.ModelSerializer):
             'name',
             'email',
             'phone',
-            'is_active'
+            'is_active',
+            'community'
         ]
 
 
 class AdminUpdateStaffProfile(serializers.ModelSerializer):
+    status = serializers.CharField(source='get_is_active_display', read_only=True)
     class Meta:
         model= StaffProfile
         fields = [
@@ -100,48 +74,39 @@ class AdminUpdateStaffProfile(serializers.ModelSerializer):
             'designation',
             'monthly_salary',
             'status'
+   
         ]
 class AdminUpdateResidentProfile(serializers.ModelSerializer):
-
-
     class Meta:
-        model= AdminResident_Profile
-        fields = [
+        model = AdminResident_Profile
+        fields = ['flat', 'block', 'status']
 
-            'flat',
-            'block',
-            'status'
-        ]
-    def validate(self,data):
+    def validate(self, data):
         flat = data.get("flat")
-        if flat and flat.occupied:
-            raise serializers.ValidationError(
-                {'flat' : "flat is occupied"}
-        )
-
+        if flat and flat.occupied and flat.resident != self.instance.user:
+            raise serializers.ValidationError({'flat': "This flat is already occupied."})
         return data
-    
-        
-    def update(self,instance,validated_data):
+
+    def update(self, instance, validated_data):
         old_flat = instance.flat
-        new_flat = validated_data.get('flat')
+        new_flat = validated_data.get('flat', old_flat)
 
         if new_flat:
             instance.block = new_flat.block
-            
-
         elif 'flat' in validated_data and new_flat is None:
-            validated_data['block'] = None
+            instance.block = None
 
+        instance = super().update(instance, validated_data)
 
-        instance = super().update(instance,validated_data)
-        
-        if old_flat and old_flat != instance.flat:
+        if old_flat and old_flat != new_flat:
             old_flat.occupied = False
+            old_flat.resident = None  
             old_flat.save()
 
-        if instance.flat:
-            instance.flat.occupied = True
-            instance.flat.save()
 
-        return instance 
+        if new_flat:
+            new_flat.occupied = True
+            new_flat.resident = instance.user  
+            new_flat.save()
+
+        return instance
