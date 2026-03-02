@@ -8,7 +8,7 @@ from apps.accounts.models import User
 from .models import StaffProfile,AdminResident_Profile
 from .serializers import *
 from .pagination import CustomPagination
-
+from rest_framework import status
 
 # Create your views here.
 
@@ -29,7 +29,8 @@ class AdminResidentListAPIView(APIView):
 
     def get(self, request):
         residents = User.objects.filter(
-            role='RESIDENT'
+            role='RESIDENT',
+            community=request.user.community 
         ).select_related(
             'resident_profile',
             'resident_profile__flat',
@@ -53,7 +54,8 @@ class AdminStaffListAPIView(APIView):
 
     def get(self, request):
         staffs = User.objects.filter(
-            role='STAFF'
+            role='STAFF',
+            community=request.user.community
         ).select_related(
             'staff_profile',
         )
@@ -83,7 +85,7 @@ class AdminUpdateUserAPIView(APIView):
 
             return Response(
 
-                {"error" : "User not found"},
+                {"error" : "NOt authorised to update this User or the User is not exists"},
 
                 status=404
 
@@ -145,7 +147,7 @@ class AdminUpdateStaffProfileAPIView(APIView):
 class AdminUpdateResidentProfileAPIView(APIView):
     def put (self,request,user_id):
         try:
-            resident_profile = AdminResident_Profile.objects.get(user__id=user_id)
+            resident_profile = AdminResident_Profile.objects.get(user__id=user_id,user__community=request.user.community)
         except AdminResident_Profile.DoesNotExist:
             return Response(
                 {"error" : "REsidnt profile doesnt exists"},status=404
@@ -163,3 +165,57 @@ class AdminUpdateResidentProfileAPIView(APIView):
 
             )
         return Response(serializer.errors,status=404)
+    
+class AdminDashboardAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        admin_community = request.user.community
+        
+        if not admin_community:
+            return Response({"error": "You are not assigned to any community."}, status=400)
+
+        total_blocks = Block.objects.filter(
+            community=admin_community
+        ).count()
+
+        total_flats = Flat.objects.filter(
+            block__community=admin_community 
+        ).count()
+
+        total_active_residents = User.objects.filter(
+            role='RESIDENT',
+            community=admin_community,
+            is_active=True
+        ).count()
+
+        total_active_staff = User.objects.filter(
+            role='STAFF',
+            community=admin_community,
+            is_active=True
+        ).count()
+
+        return Response({
+            "community_name": admin_community.name,
+            "statistics": {
+                "total_blocks": total_blocks,
+                "total_flats": total_flats,
+                "total_active_residents": total_active_residents,
+                "total_active_staff": total_active_staff
+            }
+        })
+    
+class AdminCommunityDetailsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        admin_community = request.user.community
+        
+        if not admin_community:
+            return Response(
+                {"error": "You are not assigned to any community."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = CommunityDetailsSerializer(admin_community)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -3,6 +3,7 @@ from apps.accounts.models import User
 from django.contrib.auth import authenticate
 from .models import AdminResident_Profile,StaffProfile
 from apps.apartment.models import Flat, Block
+from apps.apartment.models import Community
 
 class AdminStaffListSerializer(serializers.ModelSerializer):
 
@@ -45,13 +46,14 @@ class AdminStaffListSerializer(serializers.ModelSerializer):
 
 class AdminResidentListSerializer(serializers.ModelSerializer):
     flat = serializers.CharField(source='resident_profile.flat.name', read_only=True)
-    block = serializers.CharField(source='resident_profile.block.name', read_only=True)
+    block = serializers.CharField(source='resident_profile.flat.block.name', read_only=True)
     created_date = serializers.DateField(source='resident_profile.created_date', read_only=True)
     status = serializers.CharField(source='get_is_active_display', read_only=True)
 
     class Meta:
         model = User
         fields = ['id', 'name', 'email', 'phone', 'flat', 'block', 'created_date', 'status']
+        
 
 class AdminUpdateUserInfo(serializers.ModelSerializer):
     class Meta:
@@ -110,3 +112,23 @@ class AdminUpdateResidentProfile(serializers.ModelSerializer):
             new_flat.save()
 
         return instance
+
+class NestedFlatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Flat
+        fields = ['id', 'name']
+
+class NestedBlockSerializer(serializers.ModelSerializer):
+
+    flats = NestedFlatSerializer(many=True, read_only=True) 
+
+    class Meta:
+        model = Block
+        fields = ['id', 'name', 'flats']
+
+class CommunityDetailsSerializer(serializers.ModelSerializer):
+    blocks = NestedBlockSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Community
+        fields = ['id', 'name', 'address', 'blocks']

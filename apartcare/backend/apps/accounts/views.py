@@ -5,12 +5,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from apps.admin_panel.models import AdminResident_Profile
 from apps.accounts.backends import User
-from .serializers import AdminCreateUserSerializer,LoginSerializer
+from .serializers import *
 from .permissions import IsAdmin
 from rest_framework.permissions import AllowAny ,IsAuthenticated
 from apps.accounts.utils import set_auth_cookies
 from apps.accounts.utils import clear_auth_cookies
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.exceptions import InvalidToken
 
 
 class SomeProtectedAPIView(APIView):
@@ -69,27 +71,32 @@ class LoginAPIView(APIView):
     
 
 
+
+
 class RefreshTokenAPIView(APIView):
     permission_classes = [AllowAny]
-    def post(self,request):
+    
+    def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
 
         if not refresh_token:
-            return Response({"error" : "No refresh token "},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "No refresh token found in cookies"}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
-            refresh = RefreshToken(refresh_token)
+            serializer = TokenRefreshSerializer(data={'refresh': refresh_token})
+            serializer.is_valid(raise_exception=True)
+            
+            access_token = serializer.validated_data.get('access')
+            new_refresh = serializer.validated_data.get('refresh', refresh_token) 
 
-            access_token = str(refresh.access_token)
+            response = Response({'message': "Token refreshed successfully"})
 
-            new_refresh = str(refresh)
-
-            response = Response({'message' : "Token refreshed"})
-
-            set_auth_cookies(response,access_token,new_refresh)
+            set_auth_cookies(response, access_token, new_refresh)
 
             return response
-        except Exception as e:
-            return Response({"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        except InvalidToken:
+            return Response({"error": "Invalid or expired refresh token. Please log in again."}, status=status.HTTP_401_UNAUTHORIZED)
         
 class LogoutView(APIView):
 
@@ -108,7 +115,7 @@ class LogoutView(APIView):
 
         return response
 
-class ProfileViewAPIView(APIView):
+class  ProfileViewAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -141,12 +148,26 @@ class ProfileViewAPIView(APIView):
                 data['monthly_salary'] = profile.monthly_salary
 
         return Response(data)
-    
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(
+            request.user, 
+            data=request.data, 
+            partial=True 
+        )
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "message": "Profile updated successfully.",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class DeleteView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
-    def patch(self, request, user_id):
+    def delete(self, request, user_id):
         user = get_object_or_404(User, id=user_id ,community = request.user.community)
 
         if not user.is_active:
@@ -183,7 +204,7 @@ class DeleteView(APIView):
         user.save()
 
         return Response(
-            {"message": f"User {user.email} and their {user.role} profile have been deactivated."},
+            {"message": f"User {user.name} and their {user.role} profile have been deactivated."},
             status=status.HTTP_200_OK
         )
     
@@ -218,6 +239,6 @@ class ReactivateUserView(APIView):
         user.save()
 
         return Response(
-            {"message": f"User {user.email} reactivated successfully."},
+            {"message": f"User {user.name}-{user.email} reactivated successfully."},
             status=status.HTTP_200_OK
         )

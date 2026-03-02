@@ -8,4 +8,6 @@ urlpatterns = [
     path('refresh/', RefreshTokenAPIView.as_view()),      
     path('protected/', SomeProtectedAPIView.as_view()),
     path('profile/', ProfileViewAPIView.as_view()),    
+    path('profile/update/', ProfileViewAPIView.as_view()),
+    path('reactivate/<int:user_id>/', ReactivateUserView.as_view()),
 ]

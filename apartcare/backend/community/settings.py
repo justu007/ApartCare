@@ -46,7 +46,7 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=20),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -88,8 +88,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -100,11 +101,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'community.urls'
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173", 
-    "http://127.0.0.1:5173",
-]
+
 
 TEMPLATES = [
     {
@@ -176,3 +173,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",
+]

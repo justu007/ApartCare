@@ -5,7 +5,7 @@ from .models import AdminResident_Profile,StaffProfile
 @admin.register(AdminResident_Profile)
 class ResidentProfileAdmin(admin.ModelAdmin):
 
-    list_display = ('user_email', 'get_name', 'flat', 'block', 'status', 'created_date')
+    list_display = ('id','user_email', 'get_name', 'flat', 'block', 'status', 'created_date')
     
     # 2. FILTERS (Sidebar) 
     list_filter = ('status', 'block')
@@ -29,7 +29,7 @@ class ResidentProfileAdmin(admin.ModelAdmin):
 @admin.register(StaffProfile)
 class StaffProfileAdmin(admin.ModelAdmin):
     # 1. WHAT TO SHOW
-    list_display = ('user_email', 'designation', 'monthly_salary', 'status', 'joining_date')
+    list_display = ('id','user_email', 'designation', 'monthly_salary', 'status', 'joining_date')
     
     # 2. FILTERS (Sidebar)
     list_filter = ('status', 'designation', 'joining_date')

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.apartment.models import Community
 from apps.accounts.models import User
+from django.db import transaction
 
 class CreateCommunityAdmin(serializers.ModelSerializer):
 
@@ -20,7 +21,7 @@ class CreateCommunityAdmin(serializers.ModelSerializer):
             'admin_email',
             'admin_password'
         ]
-
+    @transaction.atomic
     def create(self,validated_data):
 
 
@@ -34,10 +35,12 @@ class CreateCommunityAdmin(serializers.ModelSerializer):
         community = Community.objects.create(
             name = validated_data['name'],
             address = validated_data['address'],
-            admin = community_admin
+            admin = community_admin,
+            is_active = True
 
         )
-    
+        community_admin.community = community
+        community_admin.save()
 
         return {
             "community" : community,

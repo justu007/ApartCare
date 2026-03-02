@@ -26,12 +26,25 @@ class CreateCommunityAdminAPIView(APIView):
 
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
+class DeactivateCommunity(APIView):
+    permission_classes = [IsAuthenticated,IsSuperAdmin]
 
+    def delete(self,request,id):
+        community = get_object_or_404(Community,id = id)
+        community.is_active = False
+        community.save()
+
+        admin_user = community.admin
+        admin_user.is_active = False
+        admin_user.save()
+
+        return Response({"message": "Community and Admin deactivated successfully."})
+    
 class ReactivateCommunityView(APIView):
     permission_classes = [IsAuthenticated, IsSuperAdmin] 
 
-    def patch(self, request, community_id):
-        community = get_object_or_404(Community, id=community_id)
+    def patch(self, request, id):
+        community = get_object_or_404(Community, id=id)
         
         community.is_active = True
         community.save()

@@ -9,5 +9,7 @@ urlpatterns = [
     path("user/<int:user_id>/update/",AdminUpdateUserAPIView.as_view()),
     path("staffs/<int:user_id>/update/",AdminUpdateStaffProfileAPIView.as_view()),
     path("residents/<int:user_id>/update/",AdminUpdateResidentProfileAPIView.as_view()),
-    
+    path('dashboard/', AdminDashboardAPIView.as_view()),   
+    path('dashboard/', AdminDashboardAPIView.as_view()),
+    path('community-details/', AdminCommunityDetailsAPIView.as_view()),
 ]

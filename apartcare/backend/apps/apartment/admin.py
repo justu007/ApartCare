@@ -64,7 +64,7 @@ from .models import Community, Block, Flat
 
 @admin.register(Community)
 class CommunityAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'address', 'total_blocks') # Added a custom count column
+    list_display = ('id', 'name', 'address', 'total_blocks','is_active') # Added a custom count column
     search_fields = ('name', 'address')
     ordering = ('name',)
     list_per_page = 20

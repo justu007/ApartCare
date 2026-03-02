@@ -8,29 +8,14 @@ from rest_framework.permissions import IsAuthenticated
 from apps.accounts.models import User
 from .serializers import AdminCreateBlock,AdminCreateFlat
 
-# class AdminCreateCommunityAPIView(APIView):
 
-#     permission_classes = [IsAdmin,IsAuthenticated]
-
-#     def post(self,request):
-#         serializer = AdminCreateCommunity(data = request.data)
-
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(
-#                 {
-#                     "message" :"Community created successfully",
-#                     "data":serializer.data
-#                 },status = status.HTTP_201_CREATED
-#             )
-#         return Response(serializer.errors,status= status.HTTP_400_BAD_REQUEST)
     
 class AdminCreateBlockAPIView(APIView):
 
     permission_classes = [IsAdmin,IsAuthenticated]
 
     def post(self,request):
-        serializer = AdminCreateBlock(data = request.data)
+        serializer = AdminCreateBlock(data = request.data,context ={'request' :request})
 
         if serializer.is_valid():
             serializer.save()
@@ -47,7 +32,7 @@ class AdminCreateFlatAPIView(APIView):
     permission_classes = [IsAdmin,IsAuthenticated]
 
     def post(self,request):
-        serializer = AdminCreateFlat(data = request.data)
+        serializer = AdminCreateFlat(data = request.data,context ={'request' :request})
 
         if serializer.is_valid():
             serializer.save()
@@ -58,3 +43,5 @@ class AdminCreateFlatAPIView(APIView):
                 },status = status.HTTP_201_CREATED
             )
         return Response(serializer.errors,status= status.HTTP_400_BAD_REQUEST)
+
+
