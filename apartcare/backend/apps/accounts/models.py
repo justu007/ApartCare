@@ -18,7 +18,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=25, choices=ROLE_CHOICES)
     community = models.ForeignKey(
         "apartment.Community",
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         null=True,  
         blank=True,
         related_name="users"

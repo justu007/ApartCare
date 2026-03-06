@@ -6,14 +6,12 @@ const ManageCommunity = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // Modal States
     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
     const [isFlatModalOpen, setIsFlatModalOpen] = useState(false);
     
-    // Form States
     const [newBlockName, setNewBlockName] = useState('');
     const [newFlatName, setNewFlatName] = useState('');
-    const [selectedBlockId, setSelectedBlockId] = useState(null); // Knows which block gets the flat
+    const [selectedBlockId, setSelectedBlockId] = useState(null); 
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -31,7 +29,6 @@ const ManageCommunity = () => {
         }
     };
 
-    // --- HANDLERS ---
     const handleAddBlock = async (e) => {
         e.preventDefault();
         setSubmitting(true);
@@ -54,7 +51,7 @@ const ManageCommunity = () => {
             await addFlat({ name: newFlatName, block: selectedBlockId });
             setNewFlatName('');
             setIsFlatModalOpen(false);
-            fetchCommunityData(); // Refresh the page data!
+            fetchCommunityData(); 
         } catch (err) {
             alert(err.response?.data?.error || "Failed to add flat.");
         } finally {

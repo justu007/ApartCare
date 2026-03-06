@@ -9,7 +9,7 @@ const CommunityDirectory = () => {
     
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const limit = 10;
+    const limit = 3;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -27,8 +27,8 @@ const CommunityDirectory = () => {
                 response = await getStaff(currentPage, limit);
             }
             
-            setUsers(response.results || response.data || []); 
-            setTotalItems(response.count || 0);
+            setUsers(response.data || []);
+            setTotalItems(response.total || 0);
             
         } catch (error) {
             console.error("Failed to fetch data", error);
