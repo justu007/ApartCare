@@ -39,7 +39,9 @@ class AdminStaffListSerializer(serializers.ModelSerializer):
             'designation',
             'monthly_salary',
             'joining_date',
-            'status'
+            'status',
+            'is_active'
+            
         ]
 
 
@@ -52,7 +54,7 @@ class AdminResidentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'name', 'email', 'phone', 'flat', 'block', 'created_date', 'status']
+        fields = ['id', 'name', 'email', 'phone', 'flat', 'block', 'created_date','is_active', 'status']
         
 
 class AdminUpdateUserInfo(serializers.ModelSerializer):

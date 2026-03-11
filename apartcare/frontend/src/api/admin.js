@@ -34,3 +34,24 @@ export const addFlat = async (flatData) => {
     const response = await axiosInstance.post('/apartment/create-flat/', flatData);
     return response.data;
 };
+
+
+export const updateUser = (id, data) => {
+  return axiosInstance.put(`/admin/user/${id}/update/`, data);
+};
+
+export const updateStaff = (id, data) => {
+  return axiosInstance.put(`/admin/staffs/${id}/update/`, data);
+};
+
+export const updateResident = (id, data) => {
+  return axiosInstance.put(`/admin/residents/${id}/update/`, data);
+};
+
+export const deleteUser = (id) => {
+  return axiosInstance.delete(`/auth/delete/${id}/`);
+};
+
+export const reactivateUser = (id) => {
+  return axiosInstance.patch(`/auth/reactivate/${id}/`);
+};

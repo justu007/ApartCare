@@ -46,3 +46,38 @@ class CreateCommunityAdmin(serializers.ModelSerializer):
             "community" : community,
             "admin" : community_admin
         }
+class CommunityAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "name", "email", "phone"]
+
+class CommunityListSerializer(serializers.ModelSerializer):
+    admin = CommunityAdminSerializer(read_only=True)
+
+    class Meta:
+        model = Community
+        fields = ["id", "name", "address", "admin", "is_active"]
+
+
+class CommunityUpdateSerializer(serializers.ModelSerializer):
+
+    admin = CommunityAdminSerializer()
+
+    class Meta:
+        model = Community
+        fields = ["name", "address", "admin"]
+
+    def update(self, instance, validated_data):
+
+        admin_data = validated_data.pop("admin", None)
+        with transaction.atomic():
+            if admin_data:
+                admin = instance.admin
+
+                for attr, value in admin_data.items():
+                    setattr(admin, attr, value)
+
+                admin.save()
+
+            return super().update(instance, validated_data)
+

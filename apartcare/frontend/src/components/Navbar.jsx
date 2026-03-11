@@ -25,9 +25,15 @@ const Navbar = () => {
         )}
 
         {user?.role === "SUPER_ADMIN" && (
-          <Link to="/super-admin/create-community" className="transition hover:text-blue-300">
-            Create Community
-          </Link>
+          <>
+            <Link to="/super-admin/create-community" className="hover:text-blue-300">
+              Create Community
+            </Link>
+
+            <Link to="/super-admin/communities" className="hover:text-blue-300">
+              Communities
+            </Link>
+          </>
         )}
 
         {user?.role === "ADMIN" && (

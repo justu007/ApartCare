@@ -219,3 +219,5 @@ class AdminCommunityDetailsAPIView(APIView):
 
         serializer = CommunityDetailsSerializer(admin_community)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+

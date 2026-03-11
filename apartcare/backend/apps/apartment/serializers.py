@@ -61,3 +61,16 @@ class AdminCreateFlat(serializers.ModelSerializer):
         return flat
 
 
+
+class AvailableFlatSerializer(serializers.ModelSerializer):
+
+    block = serializers.CharField(source="block.name")
+
+    class Meta:
+        model = Flat
+        fields = [
+            "id",
+            "name",
+            "block",
+            "occupied"
+        ]

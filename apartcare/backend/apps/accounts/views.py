@@ -194,11 +194,11 @@ class DeleteView(APIView):
                     flat.resident = None
                     flat.save()
 
-        elif user.role == "ADMIN":
-            if user.community:
-                community = user.community
-                community.is_active = False
-                community.save()
+        # elif user.role == "ADMIN":
+        #     if user.community:
+        #         community = user.community
+        #         community.is_active = False
+        #         community.save()
 
         user.is_active = False
         user.save()

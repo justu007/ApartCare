@@ -4,8 +4,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny ,IsAuthenticated
 from apps.apartment.models import Community
-from .serializers import CreateCommunityAdmin
+from .serializers import *
 from apps.accounts.permissions import IsSuperAdmin
+from apps.admin_panel.serializers import CommunityDetailsSerializer
+from rest_framework.generics import RetrieveUpdateAPIView,UpdateAPIView
+from apps.accounts.models import User
+
+
+
 
 class CreateCommunityAdminAPIView(APIView):
     permission_classes = [IsSuperAdmin]
@@ -54,3 +60,19 @@ class ReactivateCommunityView(APIView):
         admin_user.save()
 
         return Response({"message": "Community and Admin reactivated successfully."})
+    
+class CommunityListView(APIView):
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
+
+    def get(self, request):
+        communities = Community.objects.select_related("admin")
+        serializer = CommunityListSerializer(communities, many=True)
+        return Response(serializer.data)
+    
+
+class CommunityUpdateView(UpdateAPIView):
+
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
+    serializer_class = CommunityUpdateSerializer
+    queryset = Community.objects.select_related("admin")
+  

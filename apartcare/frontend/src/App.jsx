@@ -13,7 +13,9 @@ import StaffDashboard from "./pages/Staff/Dashboard";
 import Profile from "./pages/Profile/Profile";
 import { useSelector } from "react-redux";
 import { fetchProfile } from "./features/auth/authSlice";
-
+import CommunityList from "./pages/superadmin/CommunityList";
+import EditStaff from "./pages/admin/EditStaff";
+import EditResident from "./pages/admin/EditResident";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -42,6 +44,13 @@ export default function App() {
             }
           />
 
+          <Route path="/super-admin/communities" 
+            element={
+            <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+              <CommunityList />
+            </ProtectedRoute>
+          } />
+
           <Route
             path="/admin/dashboard"
             element={
@@ -58,6 +67,26 @@ export default function App() {
                 <CommunityDirectory />
               </ProtectedRoute>
             }
+          />
+          
+          <Route 
+            path="/edit-staff/:id" 
+          
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <EditStaff />
+              </ProtectedRoute>
+              } 
+          />
+
+          <Route 
+            path="/edit-resident/:id" 
+          
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <EditResident />
+              </ProtectedRoute>
+              } 
           />
 
           <Route
@@ -106,6 +135,10 @@ export default function App() {
               </div>
             }
           />
+
+
+
+
         </Routes>
       </div>
     </BrowserRouter>

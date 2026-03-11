@@ -1,17 +1,23 @@
+import { useNavigate, useLocation } from "react-router-dom";
 import React, { useEffect, useState } from 'react';
 import { getResidents, getStaff } from '../../api/admin';
 import AddUserModal from '../../components/AddUserModel'; 
+import ToggleUserStatus from '../../components/ToggleUserStatus';
+
 
 const CommunityDirectory = () => {
-    const [activeTab, setActiveTab] = useState('residents'); 
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'residents');
+    const [currentPage, setCurrentPage] = useState(location.state?.currentPage || 1);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    const [currentPage, setCurrentPage] = useState(1);
+    
     const [totalItems, setTotalItems] = useState(0);
     const limit = 3;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchData();
@@ -35,6 +41,13 @@ const CommunityDirectory = () => {
         } finally {
             setLoading(false);
         }
+    };
+    const handleToggleSuccess = (userId, newIsActive) => {
+        setUsers(prevUsers => prevUsers.map(user => 
+            user.id === userId 
+                ? { ...user, is_active: newIsActive, status: newIsActive ? 'Active' : 'Inactive' } 
+                : user
+        ));
     };
 
     const handleTabChange = (tab) => {
@@ -80,7 +93,8 @@ const CommunityDirectory = () => {
                 </button>
             </div>
 
-            {/* Data Table */}
+
+
             <div className="overflow-hidden bg-white border border-gray-100 rounded-lg shadow-md">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -89,19 +103,31 @@ const CommunityDirectory = () => {
                                 <th className="p-4 font-semibold">Name</th>
                                 <th className="p-4 font-semibold">Email & Phone</th>
                                 <th className="p-4 font-semibold">Status</th>
-                                <th className="p-4 font-semibold">
-                                    {activeTab === 'residents' ? 'Residence (Block - Flat)' : 'Designation'}
-                                </th>
+                                
+                                {/* CONDITIONAL HEADERS: 1 for Resident, 2 for Staff */}
+                                {activeTab === 'residents' ? (
+                                    <th className="p-4 font-semibold">Residence (Block - Flat)</th>
+                                ) : (
+                                    <>
+                                        <th className="p-4 font-semibold">Designation</th>
+                                        <th className="p-4 font-semibold">Salary</th>
+                                    </>
+                                )}
+                                
+                                <th className="p-4 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="4" className="p-8 text-center text-gray-500">Loading records...</td>
+                                    {/* Notice colSpan changes based on the active tab width! */}
+                                    <td colSpan={activeTab === 'residents' ? 5 : 6} className="p-8 text-center text-gray-500">
+                                        Loading records...
+                                    </td>
                                 </tr>
                             ) : users.length === 0 ? (
                                 <tr>
-                                    <td colSpan="4" className="p-8 text-center text-gray-500">
+                                    <td colSpan={activeTab === 'residents' ? 5 : 6} className="p-8 text-center text-gray-500">
                                         No {activeTab} found in this community.
                                     </td>
                                 </tr>
@@ -114,20 +140,48 @@ const CommunityDirectory = () => {
                                             <div className="text-gray-400">{user.phone || 'N/A'}</div>
                                         </td>
                                         <td className="p-4">
-                                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                                                user.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                            }`}>
-                                                {user.status}
+                                        {user.is_active ? (
+                                            <span className="px-2 py-1 text-xs font-bold text-green-700 bg-green-100 rounded-full">
+                                            Active
                                             </span>
+                                        ) : (
+                                            <span className="px-2 py-1 text-xs font-bold text-red-700 bg-red-100 rounded-full">
+                                            Inactive
+                                            </span>
+                                        )}
                                         </td>
-                                        <td className="p-4 text-sm text-gray-600">
-                                            {activeTab === 'residents' ? (
-                                                user.flat ? 
-                                                `Block ${user.block} - Flat ${user.flat}` 
-                                                : 'Not Assigned'
-                                            ) : (
-                                                user.designation || 'Not Assigned'
-                                            )}
+
+                                        {/* CONDITIONAL DATA CELLS */}
+                                        {activeTab === 'residents' ? (
+                                            <td className="p-4 text-sm text-gray-600">
+                                                {user.flat ? `Block ${user.block} - Flat ${user.flat}` : 'Not Assigned'}
+                                            </td>
+                                        ) : (
+                                            <>
+                                                <td className="p-4 text-sm text-gray-600">{user.designation || 'Not Assigned'}</td>
+                                                <td className="p-4 text-sm text-gray-600">₹{user.monthly_salary || 0}</td>
+                                            </>
+                                        )}
+
+                                        {/* ACTIONS COLUMN: Both buttons inside ONE cell */}
+                                        <td className="p-4 text-right">
+                                            <div className="flex items-center justify-end gap-3">
+                                                <ToggleUserStatus user={user} onToggleSuccess={handleToggleSuccess} />
+                                                
+                                                <button
+                                                    onClick={() => navigate (activeTab === 'staff' ?
+                                                                 `/edit-staff/${user.id}` : 
+                                                                 `/edit-resident/${user.id}`,
+                                                                { state: { userToEdit: user,
+                                                                           returnTab: activeTab,
+                                                                           returnPage: currentPage
+                                                                 }}
+                                                            )}
+                                                    className="px-3 py-1 text-sm font-medium text-blue-600 transition bg-blue-100 rounded hover:bg-blue-200"
+                                                >
+                                                    Edit
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -135,6 +189,7 @@ const CommunityDirectory = () => {
                         </tbody>
                     </table>
                 </div>
+        
 
                 {/* Pagination Controls */}
                 {!loading && totalPages > 1 && (

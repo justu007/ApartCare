@@ -7,6 +7,9 @@ from apps.accounts.permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
 from apps.accounts.models import User
 from .serializers import AdminCreateBlock,AdminCreateFlat
+from rest_framework.generics import ListAPIView
+from .models import Flat
+from .serializers import AvailableFlatSerializer
 
 
     
@@ -45,3 +48,21 @@ class AdminCreateFlatAPIView(APIView):
         return Response(serializer.errors,status= status.HTTP_400_BAD_REQUEST)
 
 
+
+
+
+
+
+class AvailableFlatsView(ListAPIView):
+
+    serializer_class = AvailableFlatSerializer
+    permission_classes = [IsAuthenticated,IsAdmin]
+
+    def get_queryset(self):
+
+        community = self.request.user.community
+
+        return Flat.objects.filter(
+            block__community=community,
+            occupied=False
+        ).select_related("block")

@@ -12,4 +12,5 @@ urlpatterns = [
     path('dashboard/', AdminDashboardAPIView.as_view()),   
     path('dashboard/', AdminDashboardAPIView.as_view()),
     path('community-details/', AdminCommunityDetailsAPIView.as_view()),
+   
 ]
