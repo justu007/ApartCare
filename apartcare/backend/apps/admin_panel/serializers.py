@@ -4,7 +4,9 @@ from django.contrib.auth import authenticate
 from .models import AdminResident_Profile,StaffProfile
 from apps.apartment.models import Flat, Block
 from apps.apartment.models import Community
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 class AdminStaffListSerializer(serializers.ModelSerializer):
 
     designation = serializers.CharField(
@@ -134,3 +136,12 @@ class CommunityDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Community
         fields = ['id', 'name', 'address', 'blocks']
+
+
+
+
+
+
+class AdminForceResetSerializer(serializers.Serializer):
+    new_password = serializers.CharField(required=True, min_length=8)
+

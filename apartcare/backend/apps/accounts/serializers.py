@@ -89,3 +89,11 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['name', 'phone']
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, min_length=8)
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)

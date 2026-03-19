@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { getResidents, getStaff } from '../../api/admin';
 import AddUserModal from '../../components/AddUserModel'; 
 import ToggleUserStatus from '../../components/ToggleUserStatus';
+import axiosInstance from "../../api/axios";
 
 
 const CommunityDirectory = () => {
@@ -17,6 +18,10 @@ const CommunityDirectory = () => {
     const limit = 3;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [resetModalOpen, setResetModalOpen] = useState(false);
+    const [userToReset, setUserToReset] = useState(null);
+    const [newPassword, setNewPassword] = useState('');
+    const [resetStatus, setResetStatus] = useState({ loading: false, error: '', message: '' });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -50,6 +55,41 @@ const CommunityDirectory = () => {
         ));
     };
 
+    const openResetModal = (user) => {
+        setUserToReset(user);
+        setNewPassword('');
+        setResetStatus({ loading: false, error: '', message: '' });
+        setResetModalOpen(true);
+    };
+
+    const handleForceReset = async (e) => {
+        e.preventDefault();
+        setResetStatus({ loading: true, error: '', message: '' });
+
+        if (newPassword.length < 8) {
+            setResetStatus({ loading: false, error: 'Password must be at least 8 characters.', message: '' });
+            return;
+        }
+
+        try {
+            const response = await axiosInstance.post(`/admin/users/${userToReset.id}/reset-password/`, {
+                new_password: newPassword
+            });
+            
+            setResetStatus({ loading: false, error: '', message: response.data.message });
+            
+            setTimeout(() => {
+                setResetModalOpen(false);
+            }, 2000);
+
+        } catch (err) {
+            setResetStatus({ 
+                loading: false, 
+                error: err.response?.data?.error || "Failed to reset password.", 
+                message: '' 
+            });
+        }
+    };
     const handleTabChange = (tab) => {
         setActiveTab(tab);
         setCurrentPage(1);
@@ -104,7 +144,6 @@ const CommunityDirectory = () => {
                                 <th className="p-4 font-semibold">Email & Phone</th>
                                 <th className="p-4 font-semibold">Status</th>
                                 
-                                {/* CONDITIONAL HEADERS: 1 for Resident, 2 for Staff */}
                                 {activeTab === 'residents' ? (
                                     <th className="p-4 font-semibold">Residence (Block - Flat)</th>
                                 ) : (
@@ -120,7 +159,6 @@ const CommunityDirectory = () => {
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr>
-                                    {/* Notice colSpan changes based on the active tab width! */}
                                     <td colSpan={activeTab === 'residents' ? 5 : 6} className="p-8 text-center text-gray-500">
                                         Loading records...
                                     </td>
@@ -151,7 +189,6 @@ const CommunityDirectory = () => {
                                         )}
                                         </td>
 
-                                        {/* CONDITIONAL DATA CELLS */}
                                         {activeTab === 'residents' ? (
                                             <td className="p-4 text-sm text-gray-600">
                                                 {user.flat ? `Block ${user.block} - Flat ${user.flat}` : 'Not Assigned'}
@@ -163,26 +200,35 @@ const CommunityDirectory = () => {
                                             </>
                                         )}
 
-                                        {/* ACTIONS COLUMN: Both buttons inside ONE cell */}
                                         <td className="p-4 text-right">
                                             <div className="flex items-center justify-end gap-3">
                                                 <ToggleUserStatus user={user} onToggleSuccess={handleToggleSuccess} />
                                                 
+                                                
+                                                <button
+                                                    onClick={() => openResetModal(user)}
+                                                    className="px-3 py-1 text-sm font-medium text-red-600 transition bg-red-100 rounded hover:bg-red-200"
+                                                >
+                                                Reset Password
+                                                </button>
+
                                                 <button
                                                     onClick={() => navigate (activeTab === 'staff' ?
-                                                                 `/edit-staff/${user.id}` : 
-                                                                 `/edit-resident/${user.id}`,
-                                                                { state: { userToEdit: user,
-                                                                           returnTab: activeTab,
-                                                                           returnPage: currentPage
-                                                                 }}
-                                                            )}
+                                                        `/edit-staff/${user.id}` : 
+                                                        `/edit-resident/${user.id}`,
+                                                    { state: { userToEdit: user,
+                                                               returnTab: activeTab,
+                                                               returnPage: currentPage
+                                                     }}
+                                                    )}
                                                     className="px-3 py-1 text-sm font-medium text-blue-600 transition bg-blue-100 rounded hover:bg-blue-200"
                                                 >
                                                     Edit
                                                 </button>
                                             </div>
                                         </td>
+
+                                       
                                     </tr>
                                 ))
                             )}
@@ -191,7 +237,6 @@ const CommunityDirectory = () => {
                 </div>
         
 
-                {/* Pagination Controls */}
                 {!loading && totalPages > 1 && (
                     <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
                         <span className="text-sm text-gray-600">
@@ -224,6 +269,58 @@ const CommunityDirectory = () => {
                 activeTab={activeTab}
                 onUserAdded={fetchData} 
             />
+
+            {resetModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800">
+                            Reset Password for {userToReset?.name}
+                        </h2>
+                        
+                        {resetStatus.message && (
+                            <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded">
+                                {resetStatus.message}
+                            </div>
+                        )}
+                        {resetStatus.error && (
+                            <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded">
+                                {resetStatus.error}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleForceReset}>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700">New Password</label>
+                                <input 
+                                    type="password" 
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Minimum 8 characters"
+                                    required
+                                    className="w-full p-2 mt-1 border rounded focus:ring-2 focus:ring-red-500"
+                                />
+                            </div>
+                            
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setResetModalOpen(false)}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    disabled={resetStatus.loading || resetStatus.message !== ''}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+                                >
+                                    {resetStatus.loading ? 'Saving...' : 'Confirm Reset'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

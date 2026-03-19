@@ -16,6 +16,7 @@ import { fetchProfile } from "./features/auth/authSlice";
 import CommunityList from "./pages/superadmin/CommunityList";
 import EditStaff from "./pages/admin/EditStaff";
 import EditResident from "./pages/admin/EditResident";
+import ResetPasswordConfirm from './pages/Auth/ResetPasswordConfirm';
 
 export default function App() {
   const dispatch = useDispatch();
@@ -34,6 +35,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/auth/login/" replace />} />
           <Route path="/auth/login/" element={<Login />} />
+
+          <Route path="/reset-password-confirm/:uid/:token" element={<ResetPasswordConfirm />} />
 
           <Route
             path="/super-admin/create-community"

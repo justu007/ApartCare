@@ -3,15 +3,16 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework.response import Response
 from apps.accounts.permissions import IsAdmin
-from rest_framework.permissions import IsAuthenticated
-from apps.accounts.models import User
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from .models import StaffProfile,AdminResident_Profile
 from .serializers import *
 from .pagination import CustomPagination
 from rest_framework import status
 
-# Create your views here.
+from django.conf import settings
 
+# Create your views here.
+User = get_user_model()
 
 class TestAdmin(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
@@ -219,5 +220,27 @@ class AdminCommunityDetailsAPIView(APIView):
 
         serializer = CommunityDetailsSerializer(admin_community)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class AdminForceResetPasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated,IsAdmin]
+
+    def post(self, request, pk):
+        if request.user.role != 'ADMIN':
+            return Response({"error": "Only admins can perform this action."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            user_to_reset = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdminForceResetSerializer(data=request.data)
+        if serializer.is_valid():
+            user_to_reset.set_password(serializer.validated_data['new_password'])
+            user_to_reset.save()
+            return Response({"message": f"Password for {user_to_reset.email} has been reset."}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

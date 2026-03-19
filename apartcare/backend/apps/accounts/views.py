@@ -13,7 +13,13 @@ from apps.accounts.utils import clear_auth_cookies
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.exceptions import InvalidToken
-
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode,urlsafe_base64_decode
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.encoding import force_str
+from django.core.mail import EmailMessage 
 
 class SomeProtectedAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -242,3 +248,86 @@ class ReactivateUserView(APIView):
             {"message": f"User {user.name}-{user.email} reactivated successfully."},
             status=status.HTTP_200_OK
         )
+    
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data['old_password']):
+                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class ForgotPasswordAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.filter(email=email).first()
+            
+
+            if user:
+                token_generator = PasswordResetTokenGenerator()
+                token = token_generator.make_token(user)
+                uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+                reset_link = f"{settings.FRONTEND_URL}/reset-password-confirm/{uidb64}/{token}/"
+
+                
+                try:
+                    community = user.community
+                    community_name = community.name
+                    
+                    community_admin = User.objects.filter(community=community, role='ADMIN').first()
+                    admin_email = community_admin.email if community_admin else settings.DEFAULT_FROM_EMAIL
+                    
+                except AttributeError:
+                    community_name = "ApartCare"
+                    admin_email = settings.DEFAULT_FROM_EMAIL
+
+
+                dynamic_from_email = f"{community_name} Admin <{settings.DEFAULT_FROM_EMAIL}>"
+
+                email_message = EmailMessage(
+                    subject=f"{community_name} - Password Reset Requested",
+                    body=f"Hello {user.name},\n\nClick the link below to reset your password for {community_name}:\n\n{reset_link}\n\nIf you have any issues, reply to this email to contact your community admin.",
+                    from_email=dynamic_from_email,     
+                    to=[user.email],                   
+                    reply_to=[admin_email]             
+                )
+                
+                email_message.send(fail_silently=False)
+
+            return Response({"message": "If an account with that email exists, a reset link has been sent."}, status=status.HTTP_200_OK)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class ResetPasswordConfirmAPIView(APIView):
+    permission_classes = [AllowAny] 
+    def post(self, request):
+        uidb64 = request.data.get('uid')
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and PasswordResetTokenGenerator().check_token(user, token):
+            user.set_password(new_password)
+            user.save()
+            return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
+        
+        return Response({"error": "This reset link is invalid or has expired."}, status=status.HTTP_400_BAD_REQUEST)

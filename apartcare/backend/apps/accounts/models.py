@@ -33,7 +33,7 @@ class User(AbstractUser):
         (False, 'Inactive'),
     )
     
-    # Apply choices here
+ 
     is_active = models.BooleanField(choices=ACTIVE_CHOICES, default=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

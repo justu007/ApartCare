@@ -10,4 +10,8 @@ urlpatterns = [
     path('profile/', ProfileViewAPIView.as_view()),    
     path('profile/update/', ProfileViewAPIView.as_view()),
     path('reactivate/<int:user_id>/', ReactivateUserView.as_view()),
+    path('change-password/', ChangePasswordAPIView.as_view(), name='change-password'),
+    path('forgot-password/', ForgotPasswordAPIView.as_view(), name='forgot-password'),
+    path('reset-password/', ResetPasswordConfirmAPIView.as_view(), name='reset-password')
+
 ]

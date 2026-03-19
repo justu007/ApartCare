@@ -46,8 +46,8 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=20),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
 
@@ -180,3 +180,45 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", 
     "http://127.0.0.1:5173",
 ]
+
+FRONTEND_URL = "http://localhost:5173"
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+
+EMAIL_HOST_USER = 'justinejosephine007@gmail.com'
+EMAIL_HOST_PASSWORD = 'hqwjljdbzouqrirw'
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'justinejosephine007@gmail.com'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# # --- EMAIL SETTINGS (PRODUCTION) ---
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'  # Or smtp.sendgrid.net, etc.
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+
+# # The actual email account your server uses to log in and send the mail
+# EMAIL_HOST_USER = 'apartcare.system@gmail.com' 
+# # An "App Password" generated in your Google Account security settings
+# EMAIL_HOST_PASSWORD = 'abcd-efgh-ijkl-mnop'    
+
+# DEFAULT_FROM_EMAIL = 'ApartCare <apartcare.system@gmail.com>'
+# FRONTEND_URL = "https://www.yourrealwebsite.com"

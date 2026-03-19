@@ -12,5 +12,6 @@ urlpatterns = [
     path('dashboard/', AdminDashboardAPIView.as_view()),   
     path('dashboard/', AdminDashboardAPIView.as_view()),
     path('community-details/', AdminCommunityDetailsAPIView.as_view()),
+    path('users/<int:pk>/reset-password/', AdminForceResetPasswordAPIView.as_view(), name='admin-force-reset'),
    
 ]
