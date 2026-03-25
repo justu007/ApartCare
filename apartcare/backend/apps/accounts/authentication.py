@@ -30,7 +30,7 @@ class CookieJWTAuthentication(JWTAuthentication):
 
         except AuthenticationFailed as e:
             raise e
-        except Exception:
-            return None
+        except Exception as e:
+            raise AuthenticationFailed(f"Token error: {str(e)}")
 
         return user, validated_token

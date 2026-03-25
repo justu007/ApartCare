@@ -17,6 +17,7 @@ import CommunityList from "./pages/superadmin/CommunityList";
 import EditStaff from "./pages/admin/EditStaff";
 import EditResident from "./pages/admin/EditResident";
 import ResetPasswordConfirm from './pages/Auth/ResetPasswordConfirm';
+import IssueDashboard from "./pages/Resident/IssueDashboard";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -138,6 +139,9 @@ export default function App() {
               </div>
             }
           />
+          <Route path="/resident/issues" element={<IssueDashboard />} />
+
+          {/* <Route path="/resident/raise-issue" element={<RaiseIssue />} /> */}
 
 
 

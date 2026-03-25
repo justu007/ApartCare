@@ -53,3 +53,17 @@ class Issue(models.Model):
     
     class Meta:
         ordering = ['-created_at'] 
+
+
+
+class IssueImage(models.Model):
+    issue = models.ForeignKey(
+        Issue,
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
+    image = models.ImageField(upload_to='issue_images/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for Issue {self.issue.id}"

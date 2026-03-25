@@ -46,7 +46,7 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=20),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -84,7 +84,8 @@ INSTALLED_APPS = [
     'apps.apartment',
     'apps.webapp',
     'apps.resident',
-    'apps.staff'
+    'apps.staff',
+    'apps.issue',
 ]
 
 MIDDLEWARE = [
@@ -180,6 +181,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", 
     "http://127.0.0.1:5173",
 ]
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 FRONTEND_URL = "http://localhost:5173"
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

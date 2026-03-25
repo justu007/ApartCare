@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import *
 
+
 urlpatterns = [
     # path('admin/create-user/', AdminCreateUserAPIView.as_view()),
     path('testadmin/', TestAdmin.as_view()),
@@ -13,5 +14,6 @@ urlpatterns = [
     path('dashboard/', AdminDashboardAPIView.as_view()),
     path('community-details/', AdminCommunityDetailsAPIView.as_view()),
     path('users/<int:pk>/reset-password/', AdminForceResetPasswordAPIView.as_view(), name='admin-force-reset'),
-   
+  
 ]
+
