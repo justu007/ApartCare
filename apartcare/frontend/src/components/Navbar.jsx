@@ -109,7 +109,7 @@ const Navbar = () => {
   };
 
   return (
-    {/* Sleek Dark Glassmorphism Background */}
+    
     <nav className="sticky top-0 z-50 flex items-center justify-between p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 shadow-lg shadow-black/20">
       <div className="flex items-center gap-8">
         
@@ -136,10 +136,11 @@ const Navbar = () => {
             <>
                 <Link to="/admin/dashboard" className="transition-colors hover:text-cyan-400">Dashboard</Link>
                 <Link to="/admin/directory" className="transition-colors hover:text-cyan-400">Directory</Link>
-                <Link to="/admin/setup" className="transition-colors hover:text-cyan-400">Setup</Link>
-                <Link to="/admin/issues" className="transition-colors hover:text-cyan-400 text-cyan-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]">Issues</Link>
+                <Link to="/admin/setup" className="transition-colors hover:text-cyan-400">Community</Link>
+                <Link to="/admin/issues" className="transition-colors hover:text-cyan-400 ">Issues</Link>
             </>
             )}
+            {/* text-cyan-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)] */}
 
             {user?.role === "RESIDENT" && (
             <>

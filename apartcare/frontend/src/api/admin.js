@@ -55,3 +55,4 @@ export const deleteUser = (id) => {
 export const reactivateUser = (id) => {
   return axiosInstance.patch(`/auth/reactivate/${id}/`);
 };
+

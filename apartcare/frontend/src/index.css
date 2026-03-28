@@ -1,5 +1,58 @@
 @import "tailwindcss";
 
-body {
+/* body {
   @apply bg-slate-950 text-slate-200;
+} */
+
+
+/* Define custom animations for the pulsing neon effect */
+@keyframes neonPulsate {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* --- THE NEON EFFECT BACKGROUND --- */
+  
+  /* 1. Base color: Extreme deep midnight blue/black */
+  background-color: #020617; /* equivalent to slate-950 */
+  
+  /* 2. Radial Gradient: Creating the central glow.
+     It starts as vibrant cyan at the center and fades softly to dark navy. */
+  background-image: radial-gradient(circle at center, rgba(6, 182, 212, 0.15) 0%, rgba(2, 6, 23, 1) 70%);
+  
+  /* Ensure the background covers the full page even if content is short */
+  min-height: 100vh;
+  
+  /* Standard text color for dark mode */
+  @apply text-slate-200;
+}
+
+/* --- OPTIONAL: Make the glow "alive" with an animation --- */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  /* A secondary, warmer blue glow emanating from the bottom right */
+  background-image: radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+  
+  /* Apply the pulsating animation */
+  animation: neonPulsate 8s ease-in-out infinite;
+  pointer-events: none; /* makes sure it doesn't block clicks */
+  z-index: -1; /* puts it behind everything */
 }

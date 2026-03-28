@@ -8,6 +8,7 @@ from .models import StaffProfile,AdminResident_Profile
 from .serializers import *
 from .pagination import CustomPagination
 from rest_framework import status
+from apps.issue.models import Issue,IssueImage
 
 from django.conf import settings
 
@@ -168,7 +169,7 @@ class AdminUpdateResidentProfileAPIView(APIView):
         return Response(serializer.errors,status=404)
     
 class AdminDashboardAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated,IsAdmin] 
 
     def get(self, request):
         admin_community = request.user.community
@@ -176,14 +177,9 @@ class AdminDashboardAPIView(APIView):
         if not admin_community:
             return Response({"error": "You are not assigned to any community."}, status=400)
 
-        total_blocks = Block.objects.filter(
-            community=admin_community
-        ).count()
-
-        total_flats = Flat.objects.filter(
-            block__community=admin_community 
-        ).count()
-
+        total_blocks = Block.objects.filter(community=admin_community).count()
+        total_flats = Flat.objects.filter(block__community=admin_community).count()
+        
         total_active_residents = User.objects.filter(
             role='RESIDENT',
             community=admin_community,
@@ -196,6 +192,14 @@ class AdminDashboardAPIView(APIView):
             is_active=True
         ).count()
 
+        community_issues = Issue.objects.filter(creator__community=admin_community)
+
+        open_issues = community_issues.filter(status='Open').count()
+        assigned_issues = community_issues.filter(status='Assigned').count()
+        in_progress_issues = community_issues.filter(status='In-Progress').count()
+        resolved_issues = community_issues.filter(status='Resolved').count()
+
+
         return Response({
             "community_name": admin_community.name,
             "statistics": {
@@ -203,6 +207,12 @@ class AdminDashboardAPIView(APIView):
                 "total_flats": total_flats,
                 "total_active_residents": total_active_residents,
                 "total_active_staff": total_active_staff
+            },
+            "issue_statistics": {
+                "open": open_issues,
+                "assigned": assigned_issues,
+                "in_progress": in_progress_issues,
+                "resolved": resolved_issues
             }
         })
     

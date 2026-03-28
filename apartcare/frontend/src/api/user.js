@@ -16,6 +16,15 @@ export const getIssues = async () => {
     return response.data;
 };
 
+export const updateIssue = async (issueId, updateData) => {
+    const response = await axiosInstance.patch(`/issues/${issueId}/`, updateData,{
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
 export const createIssue = async (formData) => {
     const response = await axiosInstance.post('/issues/', formData, {
        
@@ -26,7 +35,3 @@ export const createIssue = async (formData) => {
     return response.data;
 };
 
-export const updateIssue = async (issueId, updateData) => {
-    const response = await axiosInstance.patch(`/issues/${issueId}/`, updateData);
-    return response.data;
-};
