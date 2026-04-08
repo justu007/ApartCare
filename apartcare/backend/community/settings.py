@@ -28,12 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
 
-
-# SECURITY WARNING: don't run with debug turned on in production!
-
-
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -42,6 +39,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'apps.admin_panel.pagination.CustomPagination',
+    'PAGE_SIZE': 10
 }
 
 
@@ -86,7 +85,8 @@ INSTALLED_APPS = [
     'apps.resident',
     'apps.staff',
     'apps.issue',
-    'apps.bills'
+    'apps.bills',
+    'apps.salary',
 ]
 
 MIDDLEWARE = [
@@ -102,8 +102,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'community.urls'
-
-
 
 TEMPLATES = [
     {

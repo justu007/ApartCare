@@ -9,7 +9,9 @@ from .serializers import *
 from .pagination import CustomPagination
 from rest_framework import status
 from apps.issue.models import Issue,IssueImage
-
+from rest_framework import generics
+from .models import Flat
+from rest_framework.pagination import PageNumberPagination
 from django.conf import settings
 
 # Create your views here.
@@ -254,3 +256,18 @@ class AdminForceResetPasswordAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+class FlatPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class OccupiedFlatsListAPIView(generics.ListAPIView):
+    serializer_class = OccupiedFlatSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = FlatPagination 
+    def get_queryset(self):
+        return Flat.objects.filter(
+            block__community = self.request.user.community, 
+            occupied=True
+        ).order_by('block__name', 'name')

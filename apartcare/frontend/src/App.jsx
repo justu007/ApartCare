@@ -20,6 +20,11 @@ import ResetPasswordConfirm from './pages/Auth/ResetPasswordConfirm';
 import IssueDashboard from "./pages/Resident/IssueDashboard";
 import AdminIssues from "./pages/admin/AdminIssue";
 import StaffIssues from "./pages/Staff/StaffIssues";
+import AdminGenerateBills from "./pages/admin/AdminGenerateBills";
+import ResidentBills from "./pages/Resident/ResidentBills";
+import AdminPaySalary from "./pages/admin/AdminPaySalary";
+import StaffSalaries from "./pages/Staff/StaffSalaries";
+
 
 export default function App() {
   const dispatch = useDispatch();
@@ -55,6 +60,13 @@ export default function App() {
                   <CreateCommunity />
                 </ProtectedRoute>
               }
+            />
+
+            <Route path="/admin/bills/generate" element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminGenerateBills />
+              </ProtectedRoute>
+            } 
             />
 
             <Route path="/super-admin/communities" 
@@ -98,6 +110,31 @@ export default function App() {
                 </ProtectedRoute>
                 } 
             />
+
+
+            <Route path="/admin/salaries/pay" 
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminPaySalary />
+              </ProtectedRoute>
+              } />
+
+
+            <Route path="/staff/salaries"
+            element={
+                <ProtectedRoute allowedRoles={['STAFF']}>
+                  <StaffSalaries />
+              </ProtectedRoute>
+              } />
+
+
+            <Route path="/resident/bills" 
+              element={
+                <ProtectedRoute allowedRoles={['RESIDENT']}>
+                    <ResidentBills />
+                </ProtectedRoute>
+                } />
+
 
             <Route 
               path="/edit-resident/:id" 

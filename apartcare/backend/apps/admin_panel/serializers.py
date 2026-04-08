@@ -145,3 +145,10 @@ class CommunityDetailsSerializer(serializers.ModelSerializer):
 class AdminForceResetSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True, min_length=8)
 
+
+
+class OccupiedFlatSerializer(serializers.ModelSerializer):
+    block_name = serializers.ReadOnlyField(source='block.name')
+    class Meta:
+        model = Flat
+        fields = ['id', 'name', 'block_name']

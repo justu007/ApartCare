@@ -45,6 +45,7 @@ export const updateStaff = (id, data) => {
 };
 
 export const updateResident = (id, data) => {
+
   return axiosInstance.put(`/admin/residents/${id}/update/`, data);
 };
 
@@ -56,3 +57,25 @@ export const reactivateUser = (id) => {
   return axiosInstance.patch(`/auth/reactivate/${id}/`);
 };
 
+
+export const generateBills = async (billData) => {
+    const response = await axiosInstance.post('/bills/create-bills/', billData);
+    return response.data;
+};
+
+
+export const getOccupiedFlats = async (page = 1) => {
+    const response = await axiosInstance.get(`/admin/flats/occupied/?page=${page}`);
+    return response.data;
+};
+
+export const payStaffSalary = async (salaryData) => {
+    const response = await axiosInstance.post('/salary/salaries/pay/', salaryData);
+    return response.data;
+};
+
+
+export const getGeneratedBills = async (page = 1) => {
+    const response = await axiosInstance.get(`/bills/gen_bills/?page=${page}`);
+    return response.data;
+};

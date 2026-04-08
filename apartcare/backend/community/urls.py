@@ -14,7 +14,10 @@ urlpatterns = [
     path('api/webapp/', include('apps.webapp.urls')),
     path('api/resident/', include('apps.resident.urls')),
     path('api/staff/', include('apps.staff.urls')),
-    path('api/', include('apps.issue.urls'))
+    path('api/', include('apps.issue.urls')),
+    path('api/bills/', include('apps.bills.urls')),
+    path('api/salary/', include('apps.salary.urls')),
+
 
 ]
 if settings.DEBUG:
