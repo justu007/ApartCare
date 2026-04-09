@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from 'react';
 import { getAdminDashboard } from '../../api/admin';
 import { Link } from 'react-router-dom';
@@ -27,6 +26,11 @@ const AdminDashboard = () => {
     if (loading) return <div className="flex items-center justify-center min-h-[50vh] text-xl font-semibold text-slate-400">Loading Dashboard...</div>;
     if (error) return <div className="p-4 mt-10 text-center border rounded-lg text-rose-300 bg-rose-500/10 border-rose-500/20 mx-auto max-w-2xl">{error}</div>;
 
+    // Helper function to format currency nicely
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+    };
+
     return (
         <div className="max-w-6xl p-6 mx-auto mt-8">
             <div className="mb-8">
@@ -36,14 +40,38 @@ const AdminDashboard = () => {
                 </p>
             </div>
 
-            {/* --- NEW: GLOBAL ISSUE OVERVIEW --- */}
-            
+            {/* --- NEW: FINANCIAL OVERVIEW --- */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+                <h2 className="mb-4 text-xl font-bold text-slate-200">Financial Overview</h2>
+                <Link to="/admin/finance" className="text-xs font-bold text-emerald-400 hover:text-emerald-300">View Master Ledger →</Link>
+            </div>
+            <div className="grid grid-cols-1 gap-4 mb-10 md:grid-cols-2 lg:grid-cols-4">
+                <div className="p-6 transition-all duration-300 border shadow-lg bg-slate-900 border-slate-800 border-t-4 border-t-emerald-500 rounded-xl hover:-translate-y-1">
+                    <h3 className="text-xs font-bold tracking-wider uppercase text-slate-400">Total Revenue Collected</h3>
+                    <p className="mt-2 text-3xl font-black text-emerald-400">{formatCurrency(dashboardData.finance_statistics?.total_revenue || 0)}</p>
+                </div>
+                <div className="p-6 transition-all duration-300 border shadow-lg bg-slate-900 border-slate-800 border-t-4 border-t-amber-500 rounded-xl hover:-translate-y-1">
+                    <h3 className="text-xs font-bold tracking-wider uppercase text-slate-400">Pending Dues</h3>
+                    <p className="mt-2 text-3xl font-black text-amber-400">{formatCurrency(dashboardData.finance_statistics?.pending_revenue || 0)}</p>
+                </div>
+                <div className="p-6 transition-all duration-300 border shadow-lg bg-slate-900 border-slate-800 border-t-4 border-t-rose-500 rounded-xl hover:-translate-y-1">
+                    <h3 className="text-xs font-bold tracking-wider uppercase text-slate-400">Total Expenses (Salaries)</h3>
+                    <p className="mt-2 text-3xl font-black text-rose-400">{formatCurrency(dashboardData.finance_statistics?.total_expenses || 0)}</p>
+                </div>
+                <div className="p-6 transition-all duration-300 border shadow-lg bg-slate-900 border-slate-800 border-t-4 border-t-orange-500 rounded-xl hover:-translate-y-1">
+                    <h3 className="text-xs font-bold tracking-wider uppercase text-slate-400">Overdue Bills</h3>
+                    <p className="mt-2 text-3xl font-black text-orange-400">
+                        {dashboardData.finance_statistics?.overdue_bills || 0} <span className="text-sm font-medium text-slate-500">bills</span>
+                    </p>
+                </div>
+            </div>
+
+            {/* --- GLOBAL ISSUE OVERVIEW --- */}
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
                 <h2 className="mb-4 text-xl font-bold text-slate-200">Global Issue Status</h2>
                 <Link to="/admin/issues" className="text-xs font-bold text-purple-400 hover:text-purple-300">View All →</Link>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-10 lg:grid-cols-4">
-
                 <div className="p-5 transition-all duration-300 border shadow-lg bg-slate-900 border-x-slate-800 border-b-slate-800 border-t-4 border-t-cyan-500 rounded-xl hover:-translate-y-1">
                     <h3 className="text-xs font-bold tracking-wider uppercase text-slate-400">Total Open</h3>
                     <p className="mt-1 text-3xl font-black text-cyan-400">{dashboardData.issue_statistics?.open || 0}</p>
@@ -62,10 +90,10 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            
+            {/* --- PROPERTY STATISTICS --- */}
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
                 <h2 className="mb-4 text-xl font-bold text-slate-200">Property Statistics</h2>
-                <Link to="/admin/setup" className="text-xs font-bold text-purple-400 hover:text-purple-300">View All →</Link>
+                <Link to="/admin/setup" className="text-xs font-bold text-slate-400 hover:text-slate-300">Manage Properties →</Link>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <div className="p-6 transition-all duration-300 border shadow-lg bg-slate-900/50 border-slate-800 rounded-2xl">

@@ -79,3 +79,8 @@ export const getGeneratedBills = async (page = 1) => {
     const response = await axiosInstance.get(`/bills/gen_bills/?page=${page}`);
     return response.data;
 };
+
+export const getTransactionLedger = async (page = 1) => {
+    const response = await axiosInstance.get(`/salary/admin/ledger/?page=${page}`);
+    return response.data;
+};

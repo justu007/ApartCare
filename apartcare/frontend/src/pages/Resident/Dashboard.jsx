@@ -25,6 +25,11 @@ const ResidentDashboard = () => {
     if (error) return <div className="mt-20 text-center text-rose-500">{error}</div>;
     if (!data) return null;
 
+    // Helper to format currency
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0);
+    };
+
     return (
         <div className="max-w-5xl p-6 mx-auto mt-8">
             {/* Header Section */}
@@ -37,13 +42,11 @@ const ResidentDashboard = () => {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                
-                {/* Residence Details Card (Active State) */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
+                {/* Residence Details Card */}
                 <div className="p-6 transition-all duration-300 border shadow-lg bg-slate-900 border-x-slate-800 border-b-slate-800 border-t-4 border-t-cyan-500 rounded-2xl hover:shadow-cyan-900/20">
-                    
                     <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-                        <h3 className="pb-3 mb-4 text-lg font-bold border-b text-slate-100 border-slate-800">My Residence</h3>
+                        <h3 className="text-lg font-bold text-slate-100">My Residence</h3>
                         <Link to="/profile" className="text-xs font-bold text-purple-400 hover:text-purple-300">View All →</Link>
                     </div>
                     <div className="space-y-4">
@@ -68,13 +71,12 @@ const ResidentDashboard = () => {
                     </div>
                 </div>
 
-                {/* --- NEW: MY REPORTED ISSUES CARD --- */}
+                {/* My Reported Issues Card */}
                 <div className="flex flex-col p-6 transition-all duration-300 border shadow-lg bg-slate-900 border-x-slate-800 border-b-slate-800 border-t-4 border-t-purple-500 rounded-2xl hover:shadow-purple-900/20">
                     <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
                         <h3 className="text-lg font-bold text-slate-100">My Reported Issues</h3>
                         <Link to="/resident/issues" className="text-xs font-bold text-purple-400 hover:text-purple-300">View All →</Link>
                     </div>
-                    
                     <div className="grid flex-grow grid-cols-2 gap-4">
                         <div className="p-3 text-center border rounded-lg bg-slate-800/50 border-slate-700/50">
                             <p className="mb-1 text-xs font-bold tracking-wider uppercase text-slate-400">Open</p>
@@ -94,8 +96,45 @@ const ResidentDashboard = () => {
                         </div>
                     </div>
                 </div>
-
             </div>
+
+            {/* --- 🎯 NEW: MY BILLS & DUES CARD --- */}
+            <div className="p-6 transition-all duration-300 border shadow-lg bg-slate-900 border-x-slate-800 border-b-slate-800 border-t-4 border-t-emerald-500 rounded-2xl hover:shadow-emerald-900/20">
+                <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+                    <h3 className="text-lg font-bold text-slate-100">Financial Summary</h3>
+                    <Link to="/resident/bills" className="text-xs font-bold text-emerald-400 hover:text-emerald-300">Pay Bills →</Link>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="p-5 border shadow-inner bg-slate-800/40 border-slate-700/50 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-xs font-bold tracking-wider uppercase text-slate-400">To Be Paid</h4>
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                {data.bill_statistics?.pending_count || 0} Bills
+                            </span>
+                        </div>
+                        <p className="text-3xl font-black text-amber-400">{formatCurrency(data.bill_statistics?.pending_amount)}</p>
+                    </div>
+
+                    <div className="p-5 border shadow-inner bg-slate-800/40 border-slate-700/50 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-xs font-bold tracking-wider uppercase text-slate-400">Overdue</h4>
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                                {data.bill_statistics?.overdue_count || 0} Bills
+                            </span>
+                        </div>
+                        <p className="text-3xl font-black text-rose-400">{formatCurrency(data.bill_statistics?.overdue_amount)}</p>
+                    </div>
+
+                    <div className="p-5 border shadow-inner bg-slate-800/40 border-slate-700/50 rounded-xl">
+                        <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-xs font-bold tracking-wider uppercase text-slate-400">Total Paid</h4>
+                        </div>
+                        <p className="text-3xl font-black text-emerald-400">{formatCurrency(data.bill_statistics?.paid_amount)}</p>
+                    </div>
+                </div>
+            </div>
+
         </div>
     );
 };

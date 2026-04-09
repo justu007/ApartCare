@@ -224,7 +224,7 @@ const Navbar = () => {
                 <Link to="/admin/setup" className="transition-colors hover:text-cyan-400">Community</Link>
                 <Link to="/admin/issues" className="transition-colors hover:text-cyan-400 ">Issues</Link>
                 <Link to="/admin/bills/generate" className="transition-colors hover:text-cyan-400 ">Generate Bills</Link>
-                <Link to="/admin/salaries/pay" className="transition-colors hover:text-cyan-400 ">Pay Staff</Link>
+                <Link to="/admin/finance" className="transition-colors hover:text-cyan-400 "> Finance & Salaries</Link>
             </>
             )}
 

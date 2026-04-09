@@ -1,5 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { getResidentBills, createRazorpayOrder, verifyRazorpayPayment } from '../../api/user';
+
 
 const ResidentBills = () => {
     const [bills, setBills] = useState([]);
@@ -7,17 +9,35 @@ const ResidentBills = () => {
     const [processingId, setProcessingId] = useState(null); 
     const [error, setError] = useState('');
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    const [paymentPopup, setPaymentPopup] = useState({ 
+        isOpen: false, 
+        status: '', 
+        message: '' 
+    });
+
     useEffect(() => { 
-        fetchBills(); 
         loadRazorpayScript();
     }, []);
 
-    const fetchBills = async () => {
+    useEffect(() => { 
+        fetchBills(currentPage); 
+    }, [currentPage]);
+
+    const fetchBills = async (page) => {
         setLoading(true);
         try {
-            const data = await getResidentBills();
-            setBills(Array.isArray(data) ? data : (data.results || []));
+            const response = await getResidentBills(page); 
+            
+            setBills(response.data || []);
+            
+            if (response.total) {
+                setTotalPages(Math.ceil(response.total / (response.limit || 10)));
+            }
         } catch (err) {
+            console.error("Error fetching bills", err);
             setError("Failed to load your bills.");
         } finally {
             setLoading(false);
@@ -58,11 +78,24 @@ const ResidentBills = () => {
                             razorpay_signature: response.razorpay_signature
                         });
                         
-                        alert(`Successfully paid ₹${bill.total_amount}!`);
-                        fetchBills(); 
+                        setPaymentPopup({
+                            isOpen: true,
+                            status: 'success',
+                            message: `Payment of ₹${bill.total_amount || bill.amount} was successful! Your ledger has been updated.`
+                        });
+                        
+                        fetchBills(currentPage); 
+                        
+                        setTimeout(() => {
+                            setPaymentPopup({ isOpen: false, status: '', message: '' });
+                        }, 4000);
                         
                     } catch (verifyErr) {
-                        alert("Payment verification failed. Please contact admin.");
+                        setPaymentPopup({
+                            isOpen: true,
+                            status: 'error',
+                            message: "Payment verification failed. Please contact admin."
+                        });
                     }
                 },
                 prefill: {
@@ -74,11 +107,15 @@ const ResidentBills = () => {
                 }
             };
 
-           
             const rzp = new window.Razorpay(options);
             
             rzp.on('payment.failed', function (response) {
-                alert("Payment failed: " + response.error.description);
+              
+                setPaymentPopup({
+                    isOpen: true,
+                    status: 'error',
+                    message: "Payment failed: " + response.error.description
+                });
             });
             
             rzp.open();
@@ -112,21 +149,21 @@ const ResidentBills = () => {
                                 <th className="p-5 font-bold text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800/50">
-                            {loading ? (
+                        <tbody className={`divide-y divide-slate-800/50 transition-opacity duration-300 ${loading ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                            {bills.length === 0 && loading ? (
                                 <tr><td colSpan={6} className="p-10 text-center text-slate-500">Loading your bills...</td></tr>
-                            ) : bills.length === 0 ? (
+                            ) : bills.length === 0 && !loading ? (
                                 <tr><td colSpan={6} className="p-10 text-center text-slate-500">No bills generated for your flat yet.</td></tr>
                             ) : (
                                 bills.map((bill) => (
                                     <tr key={bill.id} className="transition-colors hover:bg-slate-800/40">
                                         <td className="p-5 font-bold text-slate-200">
-                                            Month {bill.billing_month}, {bill.billing_year}
+                                            {new Date(0, bill.billing_month - 1).toLocaleString('default', { month: 'long' })}, {bill.billing_year}
                                         </td>
                                         <td className="p-5 text-sm font-medium text-slate-300">{bill.bill_type}</td>
                                         <td className="p-5 text-sm text-slate-400">{bill.due_date}</td>
                                         <td className="p-5">
-                                            <span className="font-bold text-slate-200">₹{bill.total_amount}</span>
+                                            <span className="font-bold text-slate-200">₹{bill.total_amount || bill.amount}</span>
                                         </td>
                                         <td className="p-5 text-center">
                                             <span className={`px-2.5 py-1 text-xs font-bold tracking-wider rounded border 
@@ -155,7 +192,70 @@ const ResidentBills = () => {
                         </tbody>
                     </table>
                 </div>
+                {totalPages > 1 && (
+                <div className="flex items-center justify-between p-5 mt-4 border-t border-slate-800 bg-slate-900/50">
+                    <button 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                        disabled={currentPage === 1} 
+                        className="px-4 py-2 text-sm font-bold transition-colors border rounded-lg text-slate-300 border-slate-700 bg-slate-800/50 hover:bg-slate-700 disabled:opacity-30"
+                    >
+                        Previous
+                    </button>
+                    <span className="text-sm font-medium text-slate-400">
+                        Page <span className="text-slate-200">{currentPage}</span> of {totalPages}
+                    </span>
+                    <button 
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                        disabled={currentPage === totalPages} 
+                        className="px-4 py-2 text-sm font-bold transition-colors border rounded-lg text-slate-300 border-slate-700 bg-slate-800/50 hover:bg-slate-700 disabled:opacity-30"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
             </div>
+
+            {/* --- 🎯 THE BEAUTIFUL PAYMENT POPUP MODAL --- */}
+            {paymentPopup.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className={`relative w-full max-w-sm p-8 text-center transition-all transform border shadow-2xl rounded-3xl bg-slate-900 
+                        ${paymentPopup.status === 'success' ? 'border-emerald-500/30 shadow-emerald-900/20' : 'border-rose-500/30 shadow-rose-900/20'}
+                    `}>
+                        
+                        <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full border-4 
+                            ${paymentPopup.status === 'success' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'}
+                        `}>
+                            {paymentPopup.status === 'success' ? (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                            ) : (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            )}
+                        </div>
+
+                        <h3 className={`text-2xl font-black mb-2 
+                            ${paymentPopup.status === 'success' ? 'text-emerald-400' : 'text-rose-400'}
+                        `}>
+                            {paymentPopup.status === 'success' ? 'Payment Successful!' : 'Verification Failed'}
+                        </h3>
+                        
+                        <p className="mb-8 text-sm leading-relaxed text-slate-300">
+                            {paymentPopup.message}
+                        </p>
+
+                        <button 
+                            onClick={() => setPaymentPopup({ isOpen: false, status: '', message: '' })}
+                            className={`w-full py-3.5 font-bold tracking-widest uppercase transition-all duration-300 transform rounded-xl border border-transparent hover:-translate-y-0.5
+                                ${paymentPopup.status === 'success' 
+                                    ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-900 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]' 
+                                    : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]'
+                                }
+                            `}
+                        >
+                            {paymentPopup.status === 'success' ? 'Awesome' : 'Close'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

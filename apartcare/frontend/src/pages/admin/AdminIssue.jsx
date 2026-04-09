@@ -21,17 +21,47 @@ const AdminIssues = () => {
         fetchData(currentPage);
     }, [currentPage]);
 
+    // const fetchData = async (page = 1) => {
+    //     setLoading(true);
+    //     try {
+    //         const issuesData = await getIssues(page); 
+    //         const fetchedIssues = issuesData.data ? issuesData.data : (Array.isArray(issuesData) ? issuesData : []);
+    //         setIssues(Array.isArray(fetchedIssues) ? fetchedIssues : []);
+            
+    //         if (issuesData.count) setTotalPages(Math.ceil(issuesData.count / 10)); 
+
+    //         const staffData = await getStaff(1, 100); 
+    //         setStaffMembers(staffData.data || []);
+    //     } catch (err) {
+    //         console.error(err);
+    //         setError('Failed to load issues or staff members.');
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+
     const fetchData = async (page = 1) => {
         setLoading(true);
         try {
             const issuesData = await getIssues(page); 
-            const fetchedIssues = issuesData.results || issuesData;
+            
+            // 🎯 1. Catch the array whether it's in .results or .data
+            const fetchedIssues = issuesData.results || issuesData.data || issuesData;
             setIssues(Array.isArray(fetchedIssues) ? fetchedIssues : []);
             
-            if (issuesData.count) setTotalPages(Math.ceil(issuesData.count / 10)); 
+            // 🎯 2. Catch the total items whether it's in .count or .total
+            const totalItems = issuesData.count || issuesData.total || 0;
+            if (totalItems) {
+                setTotalPages(Math.ceil(totalItems / 10)); 
+            } else {
+                setTotalPages(1);
+            }
 
+            // Also make sure your Staff dropdown doesn't break if it has pagination!
             const staffData = await getStaff(1, 100); 
-            setStaffMembers(staffData.data || []);
+            setStaffMembers(staffData.results || staffData.data || staffData);
+            
         } catch (err) {
             console.error(err);
             setError('Failed to load issues or staff members.');
@@ -39,6 +69,7 @@ const AdminIssues = () => {
             setLoading(false);
         }
     };
+
 
     const handleUpdate = async (e) => {
         e.preventDefault();
@@ -153,7 +184,7 @@ const AdminIssues = () => {
                 </div>
                 
                 {/* Pagination Controls */}
-                {!loading && totalPages > 1 && (
+                {!loading &&  (
                     <div className="flex items-center justify-between p-5 border-t bg-slate-900/80 border-slate-800">
                         <span className="text-sm text-slate-400">Showing page <span className="font-bold text-slate-200">{currentPage}</span> of <span className="font-bold text-slate-200">{totalPages}</span></span>
                         <div className="flex gap-2">

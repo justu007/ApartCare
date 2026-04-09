@@ -13,8 +13,11 @@ from rest_framework import generics
 from .models import Flat
 from rest_framework.pagination import PageNumberPagination
 from django.conf import settings
+from django.db.models import Sum
+from apps.bills.models import Bill
+from apps.salary.models import SalaryPayment,Transaction
 
-# Create your views here.
+
 User = get_user_model()
 
 class TestAdmin(APIView):
@@ -170,8 +173,57 @@ class AdminUpdateResidentProfileAPIView(APIView):
             )
         return Response(serializer.errors,status=404)
     
+# class AdminDashboardAPIView(APIView):
+#     permission_classes = [IsAuthenticated,IsAdmin] 
+
+#     def get(self, request):
+#         admin_community = request.user.community
+        
+#         if not admin_community:
+#             return Response({"error": "You are not assigned to any community."}, status=400)
+
+#         total_blocks = Block.objects.filter(community=admin_community).count()
+#         total_flats = Flat.objects.filter(block__community=admin_community).count()
+        
+#         total_active_residents = User.objects.filter(
+#             role='RESIDENT',
+#             community=admin_community,
+#             is_active=True
+#         ).count()
+
+#         total_active_staff = User.objects.filter(
+#             role='STAFF',
+#             community=admin_community,
+#             is_active=True
+#         ).count()
+
+#         community_issues = Issue.objects.filter(creator__community=admin_community)
+
+#         open_issues = community_issues.filter(status='Open').count()
+#         assigned_issues = community_issues.filter(status='Assigned').count()
+#         in_progress_issues = community_issues.filter(status='In-Progress').count()
+#         resolved_issues = community_issues.filter(status='Resolved').count()
+
+
+#         return Response({
+#             "community_name": admin_community.name,
+#             "statistics": {
+#                 "total_blocks": total_blocks,
+#                 "total_flats": total_flats,
+#                 "total_active_residents": total_active_residents,
+#                 "total_active_staff": total_active_staff
+#             },
+#             "issue_statistics": {
+#                 "open": open_issues,
+#                 "assigned": assigned_issues,
+#                 "in_progress": in_progress_issues,
+#                 "resolved": resolved_issues
+#             }
+#         })
+    
+
 class AdminDashboardAPIView(APIView):
-    permission_classes = [IsAuthenticated,IsAdmin] 
+    permission_classes = [IsAuthenticated, IsAdmin] 
 
     def get(self, request):
         admin_community = request.user.community
@@ -179,28 +231,43 @@ class AdminDashboardAPIView(APIView):
         if not admin_community:
             return Response({"error": "You are not assigned to any community."}, status=400)
 
+        # --- PROPERTY STATS ---
         total_blocks = Block.objects.filter(community=admin_community).count()
         total_flats = Flat.objects.filter(block__community=admin_community).count()
         
         total_active_residents = User.objects.filter(
-            role='RESIDENT',
-            community=admin_community,
-            is_active=True
+            role='RESIDENT', community=admin_community, is_active=True
         ).count()
 
         total_active_staff = User.objects.filter(
-            role='STAFF',
-            community=admin_community,
-            is_active=True
+            role='STAFF', community=admin_community, is_active=True
         ).count()
 
+        # --- ISSUE STATS ---
         community_issues = Issue.objects.filter(creator__community=admin_community)
-
         open_issues = community_issues.filter(status='Open').count()
         assigned_issues = community_issues.filter(status='Assigned').count()
         in_progress_issues = community_issues.filter(status='In-Progress').count()
         resolved_issues = community_issues.filter(status='Resolved').count()
 
+        # --- 🎯 NEW: FINANCIAL STATS ---
+        community_bills = Bill.objects.filter(flat__block__community=admin_community)
+        
+        # 1. Money IN (Revenue from Paid Bills)
+        total_revenue = community_bills.filter(status='PAID').aggregate(Sum('total_amount'))['total_amount__sum'] or 0.00
+        
+        # 2. Pending Money (Unpaid & Overdue Bills)
+        pending_revenue = community_bills.exclude(status='PAID').aggregate(Sum('total_amount'))['total_amount__sum'] or 0.00
+        
+        # 3. Overdue Bills Count
+        overdue_bills_count = community_bills.filter(status='OVERDUE').count()
+
+        # 4. Money OUT (Expenses / Salaries paid by the Admin)
+        # Assuming your Ledger logic saves Admin as the 'payer' for salaries/expenses
+        total_expenses = Transaction.objects.filter(
+            payer=request.user, 
+            status='SUCCESS'
+        ).aggregate(Sum('amount'))['amount__sum'] or 0.00
 
         return Response({
             "community_name": admin_community.name,
@@ -215,9 +282,14 @@ class AdminDashboardAPIView(APIView):
                 "assigned": assigned_issues,
                 "in_progress": in_progress_issues,
                 "resolved": resolved_issues
+            },
+            "finance_statistics": {
+                "total_revenue": total_revenue,
+                "pending_revenue": pending_revenue,
+                "total_expenses": total_expenses,
+                "overdue_bills": overdue_bills_count
             }
         })
-    
 class AdminCommunityDetailsAPIView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 

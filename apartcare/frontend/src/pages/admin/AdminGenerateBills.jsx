@@ -34,6 +34,9 @@ const AdminGenerateBills = () => {
     const [loadingBills, setLoadingBills] = useState(false);
     const [billsError, setBillsError] = useState('');
 
+    const [billsPage, setBillsPage] = useState(1);
+    const [billsTotalPages, setBillsTotalPages] = useState(1);
+
     useEffect(() => {
         if (isVariable && activeTab === 'CREATE') {
             fetchFlats(currentPage);
@@ -42,16 +45,22 @@ const AdminGenerateBills = () => {
 
     useEffect(() => {
         if (activeTab === 'LIST') {
-            fetchBillsHistory();
+            fetchBillsHistory(billsPage);
         }
-    }, [activeTab]);
+    }, [activeTab,billsPage]);
 
     const fetchFlats = async (page) => {
         setFetchingFlats(true);
         try {
-            const data = await getOccupiedFlats(page);
-            setOccupiedFlats(data.data || data);
-            if (data.count) setTotalPages(Math.ceil(data.count / 10)); 
+            const response = await getOccupiedFlats(page);
+            
+            const flatsArray = response.results || response.data || [];
+            setOccupiedFlats(flatsArray);
+            
+            const totalItems = response.count || response.total || 0;
+            if (totalItems) {
+                setTotalPages(Math.ceil(totalItems / 10));
+            }
         } catch (err) {
             console.error("Failed to fetch flats", err);
         } finally {
@@ -59,19 +68,24 @@ const AdminGenerateBills = () => {
         }
     };
 
-    const fetchBillsHistory = async () => {
+
+    const fetchBillsHistory = async (page) => {
         setLoadingBills(true);
         setBillsError('');
         try {
-            const data = await getGeneratedBills();
-            setBillsList(data.data ? data.data : (Array.isArray(data) ? data : []));
+            const response = await getGeneratedBills(page); 
+            
+            setBillsList(response.data || []);
+            
+            if (response.total) {
+                setBillsTotalPages(Math.ceil(response.total / response.limit));
+            }
         } catch (err) {
             setBillsError("Failed to load billing history.");
         } finally {
             setLoadingBills(false);
         }
     };
-
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         setError(''); setResult(null); 
@@ -94,7 +108,13 @@ const AdminGenerateBills = () => {
             setError("You cannot generate bills for future months.");
             return; 
         }
+        const dueDateObj = new Date(formData.due_date);
+        const billingPeriodEnd = new Date(selectedYear, selectedMonth, 0); 
 
+        if (dueDateObj <= billingPeriodEnd) {
+            setError("Invalid Due Date: The due date must be in the month following the billing period (or later).");
+            return;
+        }
         setLoading(true); setError(''); setResult(null);
 
         try {
@@ -171,6 +191,7 @@ const AdminGenerateBills = () => {
                                     <select name="bill_type" value={formData.bill_type} onChange={handleChange} className="w-full p-3 transition-colors border outline-none bg-slate-800 border-slate-700 text-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500 cursor-pointer">
                                         <option value="MAINTENANCE">Maintenance (Fixed Amount)</option>
                                         <option value="WATER">Water Bill (Metered)</option>
+                                        <option value="RENT">Rent </option>
                                         <option value="ELECTRICITY">Electricity Bill (Metered)</option>
                                     </select>
                                 </div>
@@ -255,6 +276,7 @@ const AdminGenerateBills = () => {
                             <thead>
                                 <tr className="text-xs tracking-wider uppercase border-b text-slate-400 border-slate-800 bg-slate-900/80">
                                     <th className="p-5 font-bold">Flat</th>
+                                    <th className="p-5 font-bold"> Resident</th>
                                     <th className="p-5 font-bold">Bill Type</th>
                                     <th className="p-5 font-bold">Billing Period</th>
                                     <th className="p-5 font-bold">Due Date</th>
@@ -262,16 +284,23 @@ const AdminGenerateBills = () => {
                                     <th className="p-5 font-bold text-center">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800/50">
-                                {loadingBills ? (
-                                    <tr><td colSpan={6} className="p-10 text-center text-slate-500">Loading billing history...</td></tr>
-                                ) : billsList.length === 0 ? (
-                                    <tr><td colSpan={6} className="p-10 text-center text-slate-500">No bills have been generated yet.</td></tr>
+
+                            <tbody className={`divide-y divide-slate-800/50 transition-opacity duration-300 ${loadingBills ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                                
+                                {billsList.length === 0 && loadingBills ? (
+                                    <tr><td colSpan={7} className="p-10 text-center text-slate-500">Loading billing history...</td></tr>
+                                
+                               ) : billsList.length === 0 && !loadingBills ? (
+                                    <tr><td colSpan={7} className="p-10 text-center text-slate-500">No bills have been generated yet.</td></tr>
+                                
                                 ) : (
                                     billsList.map((bill) => (
                                         <tr key={bill.id} className="transition-colors hover:bg-slate-800/40">
                                             <td className="p-5 font-bold text-slate-200">
                                                 {bill.block_name} - Flat {bill.flat_name}
+                                            </td>
+                                            <td className="p-5 text-sm text-slate-300">
+                                                {bill.user_name || 'Unoccupied'}
                                             </td>
                                             <td className="p-5 text-sm text-slate-300">{bill.bill_type}</td>
                                             <td className="p-5 text-sm text-slate-400">
@@ -295,6 +324,29 @@ const AdminGenerateBills = () => {
                             </tbody>
                         </table>
                     </div>
+                    {billsTotalPages > 1 && (
+                    <div className="flex items-center justify-between p-5 border-t border-slate-800 bg-slate-900/50">
+                        <button 
+                            type="button" 
+                            onClick={() => setBillsPage(p => Math.max(1, p - 1))} 
+                            disabled={billsPage === 1} 
+                            className="px-4 py-2 text-sm font-bold transition-colors border rounded-lg text-slate-300 border-slate-700 bg-slate-800/50 hover:bg-slate-700 disabled:opacity-30"
+                        >
+                            Previous
+                        </button>
+                        <span className="text-sm font-medium text-slate-400">
+                            Page <span className="text-slate-200">{billsPage}</span> of {billsTotalPages}
+                        </span>
+                        <button 
+                            type="button" 
+                            onClick={() => setBillsPage(p => Math.min(billsTotalPages, p + 1))} 
+                            disabled={billsPage === billsTotalPages} 
+                            className="px-4 py-2 text-sm font-bold transition-colors border rounded-lg text-slate-300 border-slate-700 bg-slate-800/50 hover:bg-slate-700 disabled:opacity-30"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
                 </div>
             )}
         </div>

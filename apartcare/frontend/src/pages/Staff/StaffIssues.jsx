@@ -24,7 +24,7 @@ const StaffIssues = () => {
             // Because of your awesome Django get_queryset, this automatically 
             // ONLY returns issues assigned to this specific logged-in staff member!
             const data = await getIssues(page);
-            const fetchedIssues = data.results || data;
+            const fetchedIssues = data.data ? data.data : (Array.isArray(data) ? data : []);
             setIssues(Array.isArray(fetchedIssues) ? fetchedIssues : []);
             
             if (data.count) setTotalPages(Math.ceil(data.count / 10));

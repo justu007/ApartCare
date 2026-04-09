@@ -17,7 +17,8 @@ const IssueList = () => {
         setLoading(true);
         try {
             const data = await getIssues();
-            const fetchedIssues = data.results || data;
+            // const fetchedIssues = data.results || data;
+            const fetchedIssues = data.data ? data.data : (Array.isArray(data) ? data : []);
             setIssues(Array.isArray(fetchedIssues) ? fetchedIssues : []);
         } catch (err) {
             console.error(err);

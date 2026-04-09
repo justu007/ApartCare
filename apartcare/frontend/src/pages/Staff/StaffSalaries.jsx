@@ -9,8 +9,9 @@ const StaffSalaries = () => {
     useEffect(() => {
         const fetchSalaries = async () => {
             try {
-                const data = await getStaffSalaries();
-                setSalaries(Array.isArray(data) ? data : (data.results || []));
+                const response = await getStaffSalaries();
+                // setSalaries(Array.isArray(data) ? data : (data.results || []));
+                setSalaries(response.data ? response.data : (Array.isArray(response) ? response : []));
             } catch (err) {
                 setError("Failed to load your salary history.");
             } finally {

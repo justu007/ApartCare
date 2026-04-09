@@ -22,9 +22,8 @@ import AdminIssues from "./pages/admin/AdminIssue";
 import StaffIssues from "./pages/Staff/StaffIssues";
 import AdminGenerateBills from "./pages/admin/AdminGenerateBills";
 import ResidentBills from "./pages/Resident/ResidentBills";
-import AdminPaySalary from "./pages/admin/AdminPaySalary";
 import StaffSalaries from "./pages/Staff/StaffSalaries";
-
+import AdminFinanceHub from "./pages/admin/AdminSalaries";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -62,46 +61,46 @@ export default function App() {
               }
             />
 
-            <Route path="/admin/bills/generate" element={
+              <Route path="/admin/bills/generate" element={
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminGenerateBills />
               </ProtectedRoute>
-            } 
-            />
+              } 
+              />
 
-            <Route path="/super-admin/communities" 
+              <Route path="/super-admin/communities" 
               element={
               <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
                 <CommunityList />
               </ProtectedRoute>
-            } />
+              } />
 
-            <Route
+              <Route
               path="/admin/dashboard"
               element={
                 <ProtectedRoute allowedRoles={["ADMIN"]}>
                   <AdminDashboard />
                 </ProtectedRoute>
               }
-            />
-            <Route path="/admin/issues" 
+              />
+              <Route path="/admin/issues" 
               element={
                 <ProtectedRoute allowedRoles={["ADMIN"]}>
                   <AdminIssues />
                 </ProtectedRoute>    
               }
-            />
+              />
 
-            <Route
+              <Route
               path="/admin/directory"
               element={
                 <ProtectedRoute allowedRoles={["ADMIN"]}>
                   <CommunityDirectory />
                 </ProtectedRoute>
-              }
-            />
+                }
+              />
             
-            <Route 
+              <Route 
               path="/edit-staff/:id" 
             
               element={
@@ -109,26 +108,27 @@ export default function App() {
                     <EditStaff />
                 </ProtectedRoute>
                 } 
-            />
+              />
 
 
-            <Route path="/admin/salaries/pay" 
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                    <AdminPaySalary />
-              </ProtectedRoute>
-              } />
+              <Route path="/admin/finance" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminFinanceHub />
+                </ProtectedRoute>
+                } 
+              />
 
 
-            <Route path="/staff/salaries"
-            element={
+              <Route path="/staff/salaries"
+              element={
                 <ProtectedRoute allowedRoles={['STAFF']}>
                   <StaffSalaries />
               </ProtectedRoute>
               } />
 
 
-            <Route path="/resident/bills" 
+              <Route path="/resident/bills" 
               element={
                 <ProtectedRoute allowedRoles={['RESIDENT']}>
                     <ResidentBills />
@@ -136,7 +136,7 @@ export default function App() {
                 } />
 
 
-            <Route 
+              <Route 
               path="/edit-resident/:id" 
             
               element={
@@ -144,36 +144,36 @@ export default function App() {
                     <EditResident />
                 </ProtectedRoute>
                 } 
-            />
+              />
 
-            <Route
+              <Route
               path="/admin/setup"
               element={
                 <ProtectedRoute allowedRoles={["ADMIN"]}>
                   <ManageCommunity />
                 </ProtectedRoute>
               }
-            />
+              />
 
-            <Route
+              <Route
               path="/resident/dashboard"
               element={
                 <ProtectedRoute allowedRoles={["RESIDENT"]}>
                   <ResidentDashboard />
                 </ProtectedRoute>
               }
-            />
+              />
 
-            <Route
+              <Route
               path="/staff/dashboard"
               element={
                 <ProtectedRoute allowedRoles={["STAFF"]}>
                   <StaffDashboard />
                 </ProtectedRoute>
               }
-            />
+              />
 
-            <Route
+              <Route
               path="/profile"
               element={
                 <ProtectedRoute
@@ -182,35 +182,35 @@ export default function App() {
                   <Profile />
                 </ProtectedRoute>
               }
-            />
+              />
 
-            <Route path="/resident/issues" 
+              <Route path="/resident/issues" 
               element={
                 <ProtectedRoute
                   allowedRoles={[ "RESIDENT"]} >
                   <IssueDashboard />
                 </ProtectedRoute>
               } 
-            />
+              />
 
-            <Route path="/staff/issues" 
+              <Route path="/staff/issues" 
               element={
                 <ProtectedRoute
                   allowedRoles={[ "STAFF"]} >
                   <StaffIssues />
                 </ProtectedRoute>
               } 
-            />
+              />
 
 
-            <Route
+              <Route
               path="*"
               element={
                 <div className="mt-20 text-2xl font-bold text-center">
                   404 - Page Not Found
                 </div>
               }
-            />
+              />
             
 
             
@@ -218,7 +218,7 @@ export default function App() {
 
 
           </Routes>
-          </div>
+        </div>
       </div>
     </BrowserRouter>
   );

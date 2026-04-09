@@ -11,7 +11,6 @@ urlpatterns = [
     path("staffs/<int:user_id>/update/",AdminUpdateStaffProfileAPIView.as_view()),
     path("residents/<int:user_id>/update/",AdminUpdateResidentProfileAPIView.as_view()),
     path('dashboard/', AdminDashboardAPIView.as_view()),   
-    path('dashboard/', AdminDashboardAPIView.as_view()),
     path('community-details/', AdminCommunityDetailsAPIView.as_view()),
     path('users/<int:pk>/reset-password/', AdminForceResetPasswordAPIView.as_view(), name='admin-force-reset'),
     path('flats/occupied/', OccupiedFlatsListAPIView.as_view()),
