@@ -87,6 +87,8 @@ INSTALLED_APPS = [
     'apps.issue',
     'apps.bills',
     'apps.salary',
+    'apps.hall',
+    'apps.notification',
 ]
 
 MIDDLEWARE = [

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from apps.bills.models import Bill
+from apps.hall.models import HallBooking
 
 # Create your models here.
 class SalaryPayment(models.Model):
@@ -28,6 +29,7 @@ class Transaction(models.Model):
     PURPOSE_CHOICES = (
         ('BILL_PAYMENT', 'Bill Payment'),
         ('SALARY_PAYMENT', 'Salary Payment'),
+        ('HALL_BOOKING', 'Hall Booking'),
     )
     STATUS_CHOICES = (
         ('SUCCESS', 'Success'),
@@ -40,7 +42,8 @@ class Transaction(models.Model):
     
     bill = models.ForeignKey(Bill, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     salary = models.ForeignKey(SalaryPayment, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
-    
+    hall_booking = models.ForeignKey(HallBooking, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
+
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
     payment_gateway = models.CharField(max_length=50) 

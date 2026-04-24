@@ -12,7 +12,7 @@ from apps.accounts.permissions import IsAdmin, IsStaff
 from django.db.models import Q
 from .serializers import TransactionSerializer
 from django.utils import timezone
-
+from apps.notification.models import Notification
 
 User = get_user_model()
 
@@ -64,6 +64,13 @@ class AdminPaySalaryAPIView(APIView):
                 payment_gateway='MANUAL_LOG',
                 status='SUCCESS'
             )
+            Notification.objects.create(
+                user=staff,
+                notification_type='SALARY',
+                title="Salary Credited! 💰",
+                message=f"Your salary of ₹{amount} for {month}/{year} has been processed and logged by the Admin."
+            )
+
 
         return Response({"message": f"Successfully processed ₹{amount} salary for {staff.name}."}, status=status.HTTP_201_CREATED)
 

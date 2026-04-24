@@ -66,3 +66,21 @@ class AvailableFlatsView(ListAPIView):
             block__community=community,
             occupied=False
         ).select_related("block")
+    
+
+class CommunitySettingsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        return Response({"maintenance_fee": request.user.community.maintenance_fee})
+
+    def put(self, request):
+        new_fee = request.data.get('maintenance_fee')
+        community = request.user.community
+        community.maintenance_fee = new_fee
+        community.save()
+        
+        return Response({
+            "message": "Maintenance fee updated successfully!", 
+            "maintenance_fee": community.maintenance_fee
+        })

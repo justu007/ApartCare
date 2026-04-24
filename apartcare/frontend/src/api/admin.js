@@ -84,3 +84,8 @@ export const getTransactionLedger = async (page = 1) => {
     const response = await axiosInstance.get(`/salary/admin/ledger/?page=${page}`);
     return response.data;
 };
+
+export const broadcastAnnouncement = async (data) => {
+    const response = await axiosInstance.post('/notifications/announcements/', data);
+    return response.data;
+};

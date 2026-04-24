@@ -24,6 +24,9 @@ import AdminGenerateBills from "./pages/admin/AdminGenerateBills";
 import ResidentBills from "./pages/Resident/ResidentBills";
 import StaffSalaries from "./pages/Staff/StaffSalaries";
 import AdminFinanceHub from "./pages/admin/AdminSalaries";
+import AdminManageHalls from "./pages/admin/AdminManageHalls";
+import ResidentHallBooking from "./pages/Resident/ResidentHallBooking";
+import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -100,6 +103,15 @@ export default function App() {
                 }
               />
             
+
+            <Route path="/admin/manage-venues" 
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminManageHalls />
+                </ProtectedRoute>
+              } 
+            />
+    
               <Route 
               path="/edit-staff/:id" 
             
@@ -119,6 +131,14 @@ export default function App() {
                 } 
               />
 
+              <Route path="/admin/announcements" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminAnnouncements />
+                </ProtectedRoute>
+                } 
+              />
+
 
               <Route path="/staff/salaries"
               element={
@@ -129,11 +149,20 @@ export default function App() {
 
 
               <Route path="/resident/bills" 
-              element={
+               element={
                 <ProtectedRoute allowedRoles={['RESIDENT']}>
                     <ResidentBills />
                 </ProtectedRoute>
                 } />
+
+
+              <Route path="/resident/venues" 
+                element={
+                <ProtectedRoute allowedRoles={['RESIDENT']}>
+                  <ResidentHallBooking />
+                </ProtectedRoute>
+                  } 
+              />
 
 
               <Route 

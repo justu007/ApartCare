@@ -20,6 +20,9 @@ from apps.admin_panel.pagination import CustomPagination
 from datetime import datetime
 import calendar
 from decimal import Decimal
+from apps.notification.models import Notification
+from django.contrib.auth import get_user_model
+
 class GenerateBillsAPIView(APIView):
     permission_classes = [IsAuthenticated,IsAdmin]
 
@@ -40,22 +43,21 @@ class GenerateBillsAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # try:
-        #     due_date_obj = datetime.strptime(due_date, '%Y-%m-%d').date()
+        try:
+            due_date_obj = datetime.strptime(due_date, '%Y-%m-%d').date()
             
-        #     last_day_of_month = calendar.monthrange(billing_year, billing_month)[1]
-        #     billing_period_end = datetime(billing_year, billing_month, last_day_of_month).date()
+            last_day_of_month = calendar.monthrange(billing_year, billing_month)[1]
+            billing_period_end = datetime(billing_year, billing_month, last_day_of_month).date()
 
-        #     if due_date_obj <= billing_period_end:
-        #         return Response(
-        #             {"error": "Invalid Due Date: The due date must be in the month following the billing period (or later)."}, 
-        #             status=status.HTTP_400_BAD_REQUEST
-        #         )
-        # except (ValueError, TypeError):
-        #     return Response({"error": "Invalid date format provided."}, status=status.HTTP_400_BAD_REQUEST)
+            if due_date_obj <= billing_period_end:
+                return Response(
+                    {"error": "Invalid Due Date: The due date must be in the month following the billing period (or later)."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid date format provided."}, status=status.HTTP_400_BAD_REQUEST)
         
         is_variable = data.get('is_variable', False) 
-        fixed_amount = data.get('amount') 
         flat_data = data.get('flat_data', []) 
 
         if not all([bill_type, due_date, billing_month, billing_year]):
@@ -65,8 +67,14 @@ class GenerateBillsAPIView(APIView):
         skipped_count = 0
 
         if not is_variable:
-            if not fixed_amount:
-                return Response({"error": "Fixed amount is required for Maintenance bills."}, status=status.HTTP_400_BAD_REQUEST)
+            if bill_type == 'MAINTENANCE':
+                fixed_amount  = user.community.maintenance_fee
+                if not fixed_amount or fixed_amount <= 0:
+                    return Response({"error": "Fixed amount is required for Maintenance bills."}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                fixed_amount = data.get('amount')
+                if not fixed_amount :
+                    return Response({"error": "Amount is required for variable bills."}, status=status.HTTP_400_BAD_REQUEST) 
                 
             occupied_flats = Flat.objects.filter(block__community=user.community, occupied=True)
             
@@ -115,6 +123,41 @@ class GenerateBillsAPIView(APIView):
         
         with transaction.atomic():
             Bill.objects.bulk_create(bills_to_create)
+
+        User = get_user_model()
+        notifications_to_create = []
+
+        billed_flat_ids = [bill.flat.id for bill in bills_to_create]
+
+        residents_to_notify = User.objects.filter(
+            role='RESIDENT', 
+            resident_profile__flat_id__in=billed_flat_ids
+        )
+
+        for resident in residents_to_notify:
+            notifications_to_create.append(
+                Notification(
+                    user=resident,
+                    notification_type='BILL',
+                    title="New Bill Generated 📄",
+                    message=f"A new {bill_type.title()} bill for {billing_month}/{billing_year} has been generated for your flat. Please check your dashboard."
+                )
+            )
+
+        admin_user = request.user.community.admin
+        if admin_user:
+            notifications_to_create.append(
+                Notification(
+                    user=admin_user, 
+                    notification_type='SYSTEM',
+                    title=f"{bill_type.title()} Bills Generated",
+                    message=f"Successfully generated {len(bills_to_create)} {bill_type.lower()} bills for {billing_month}/{billing_year}."
+                )
+            )
+
+
+        if notifications_to_create:
+            Notification.objects.bulk_create(notifications_to_create)
 
         
         success_msg = f"Successfully generated {len(bills_to_create)} {bill_type.lower()} bills."
@@ -211,6 +254,16 @@ class VerifyRazorpayPaymentAPIView(APIView):
                     payment_gateway='RAZORPAY',
                     status='SUCCESS'
                 )
+
+                admin_user = request.user.community.admin
+                if admin_user:
+                    Notification.objects.create(
+                        user=admin_user,
+                        notification_type='SYSTEM',
+                        title="Bill Paid ✅",
+                        message=f"{request.user.name} has paid the {bill.bill_type.lower()} bill for {bill.billing_month}/{bill.billing_year}."
+                    )   
+                    
 
             return Response({"message": "Payment verified and successful!"}, status=status.HTTP_200_OK)
 
