@@ -4,7 +4,9 @@ from .models import Announcement, Notification
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
-        fields = ['id', 'title', 'message', 'is_urgent', 'created_at']
+        fields = ['id', 'title', 'message', 'target_audience', 'is_urgent', 'created_at'] 
+               
+        read_only_fields = ['community', 'created_at']
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
