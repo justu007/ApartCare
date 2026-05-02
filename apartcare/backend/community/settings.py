@@ -66,6 +66,7 @@ AUTHENTICATION_BACKENDS = [
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'apps.accounts',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -120,7 +121,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'community.wsgi.application'
+# WSGI_APPLICATION = 'community.wsgi.application'
 
 ASGI_APPLICATION = 'community.asgi.application'
 
@@ -194,14 +195,17 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 
 EMAIL_HOST_USER = 'justinejosephine007@gmail.com'
-EMAIL_HOST_PASSWORD = 'hqwjljdbzouqrirw'
+EMAIL_HOST_PASSWORD = 'wxaemcztqtrodgqp'
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'justinejosephine007@gmail.com'
 
 
 
-
-
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 
 

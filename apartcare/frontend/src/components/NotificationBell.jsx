@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../api/axios'; 
+import { useSelector } from 'react-redux';
 
 const NotificationBell = () => {
+    const { user } = useSelector((state) => state.auth);
+    
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
@@ -18,10 +21,42 @@ const NotificationBell = () => {
     };
 
     useEffect(() => {
+        if (!user || !user.id) return;
+
         fetchNotifications(); 
-        const interval = setInterval(fetchNotifications, 15000); 
-        return () => clearInterval(interval); 
-    }, []);
+
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const ws = new WebSocket(`${wsProtocol}localhost:8000/ws/notifications/${user.id}/`);
+
+        ws.onopen = () => {
+            console.log("🟢 WebSocket Connected!");
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log("🔔 Real-time Notification received:", data);
+            
+            const newNotif = {
+                id: Date.now(), 
+                title: data.title,
+                message: data.message,
+                is_read: false,
+                created_at: new Date().toISOString()
+            };
+
+            setUnreadCount(prev => prev + 1);
+            
+            setNotifications(prevNotifications => [newNotif, ...prevNotifications]);
+        };
+
+        ws.onclose = () => {
+            console.log("🔴 WebSocket Disconnected");
+        };
+
+        return () => {
+            ws.close();
+        };
+    }, [user]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -45,6 +80,12 @@ const NotificationBell = () => {
 
     const markSingleAsRead = async (id) => {
         try {
+            if (String(id).length > 10) {
+                 setUnreadCount(prev => Math.max(0, prev - 1));
+                 setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+                 return;
+            }
+
             await axiosInstance.put('/notifications/my-alerts/mark-read/', { notification_id: id });
             setUnreadCount(prev => Math.max(0, prev - 1));
             setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));

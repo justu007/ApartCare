@@ -1,3 +1,4 @@
+from .utils import send_background_mass_email
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,6 +9,8 @@ from .serializers import AnnouncementSerializer, NotificationSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class AnnouncementAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -33,6 +36,8 @@ class AnnouncementAPIView(APIView):
         announcements = queryset.order_by('-created_at')
         serializer = AnnouncementSerializer(announcements, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
 
     def post(self, request):
         user = request.user
@@ -57,10 +62,15 @@ class AnnouncementAPIView(APIView):
 
                 if target == 'RESIDENT':
                     audience_users = audience_users.filter(role='RESIDENT')
+                    
                 elif target == 'STAFF':
                     audience_users = audience_users.filter(role='STAFF')
 
                 notifications_to_create = []
+
+                recipient_emails = []
+
+                channel_layer = get_channel_layer()
                 prefix = "🚨 URGENT: " if announcement.is_urgent else "📢 "
                 
                 for u in audience_users:
@@ -72,13 +82,30 @@ class AnnouncementAPIView(APIView):
                             message=announcement.message
                         )
                     )
-                
+
+                    if u.email:
+                        recipient_emails.append(u.email)
+
+
                 if notifications_to_create:
                     Notification.objects.bulk_create(notifications_to_create)
+
+                if recipient_emails:
+                    email_body  =   f"Hello,\n\nA new announcement has been posted by your community Admin:\n\n{announcement.message}\n\nPlease log in to ApartCare to view more details."
+                    send_background_mass_email(
+                        subject=f"{prefix}{announcement.title}",
+                        message=email_body,
+                        recipient_emails=recipient_emails
+                    )
+
+                
+
 
             return Response({"message": "Announcement broadcasted successfully!"}, status=status.HTTP_201_CREATED)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
 
 class NotificationListAPIView(APIView):
     permission_classes = [IsAuthenticated]

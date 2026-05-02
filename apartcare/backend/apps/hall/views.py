@@ -107,35 +107,67 @@ class HallAvailabilityAPIView(APIView):
 
 
 
+# class ResidentHallAPIView(APIView):
+#     permission_classes = [IsAuthenticated, IsResident]
+
+#     def get(self, request):
+#         my_bookings = HallBooking.objects.filter(resident=request.user).order_by('-created_at')
+#         serializer = HallBookingSerializer(my_bookings, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     def post(self, request):
+#         serializer = HallBookingSerializer(data=request.data, context={'request': request})
+        
+#         if serializer.is_valid():
+#             serializer.save(
+#                 resident=request.user, 
+#                 community=request.user.community, 
+#                 status='PENDING'
+#             )
+
+#             hall_name = request.data.get('hall_name', 'a hall')
+#             booking_date = request.data.get('booking_date', 'a date')
+#             Notification.objects.create(
+#                 user = request.user.community.admin,
+#                 notification_type='Hall Request',
+#                 title="New Hall Booking Request",
+#                 message=f"A new booking request has been submitted for {hall_name} on {booking_date}."
+#             )
+#             return Response({"message": "Booking request submitted successfully! Pending admin approval."}, status=status.HTTP_201_CREATED)
+            
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class ResidentHallAPIView(APIView):
     permission_classes = [IsAuthenticated, IsResident]
 
     def get(self, request):
         my_bookings = HallBooking.objects.filter(resident=request.user).order_by('-created_at')
+        
         serializer = HallBookingSerializer(my_bookings, many=True)
+        
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = HallBookingSerializer(data=request.data, context={'request': request})
         
         if serializer.is_valid():
-            serializer.save(
+            
+            booking = serializer.save(
                 resident=request.user, 
                 community=request.user.community, 
                 status='PENDING'
             )
 
-            hall_name = request.data.get('hall_name', 'a hall')
-            booking_date = request.data.get('booking_date', 'a date')
             Notification.objects.create(
-                user = request.user.community.admin,
+                user=request.user.community.admin,
                 notification_type='Hall Request',
                 title="New Hall Booking Request",
-                message=f"A new booking request has been submitted for {hall_name} on {booking_date}."
+                message=f"A new booking request has been submitted for {booking.hall.name} on {booking.booking_date}."
             )
+            
             return Response({"message": "Booking request submitted successfully! Pending admin approval."}, status=status.HTTP_201_CREATED)
             
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AdminHallAPIView(APIView):
