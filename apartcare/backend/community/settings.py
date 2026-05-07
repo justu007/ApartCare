@@ -90,6 +90,8 @@ INSTALLED_APPS = [
     'apps.salary',
     'apps.hall',
     'apps.notification',
+    'apps.chat',
+    'apps.meeting',
 ]
 
 MIDDLEWARE = [

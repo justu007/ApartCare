@@ -1,31 +1,4 @@
 
-# import threading
-# from django.core.mail import send_mass_mail
-# from django.conf import settings
-
-# class MassEmailThread(threading.Thread):
-#     def __init__(self, datatuple):
-#         self.datatuple = datatuple
-#         threading.Thread.__init__(self)
-
-#     def run(self):
-#         try:
-#             send_mass_mail(self.datatuple, fail_silently=True)
-#         except Exception as e:
-#             print(f"Failed to send email: {e}")
-
-# def send_background_mass_email(subject, message, recipient_emails):
-
-#     if not recipient_emails:
-#         return
-    
-
-#     messages = [
-#         (subject, message, settings.DEFAULT_FROM_EMAIL, [email]) 
-#         for email in recipient_emails
-#     ]
-    
-#     MassEmailThread(tuple(messages)).start()
 
 import threading
 from django.core.mail import get_connection, EmailMessage

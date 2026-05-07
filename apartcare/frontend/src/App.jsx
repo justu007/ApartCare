@@ -27,6 +27,8 @@ import AdminFinanceHub from "./pages/admin/AdminSalaries";
 import AdminManageHalls from "./pages/admin/AdminManageHalls";
 import ResidentHallBooking from "./pages/Resident/ResidentHallBooking";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
+import AdminMeetings from "./pages/admin/AdminMeetings";
+import UserMeetings from "./components/UserMeetings";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -94,6 +96,22 @@ export default function App() {
               }
               />
 
+              <Route path="/admin/meetings" 
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <AdminMeetings />
+                  </ProtectedRoute>    
+                }
+              />
+
+              <Route
+                path="/meetings"
+                element={
+                  <ProtectedRoute allowedRoles={["RESIDENT", "STAFF"]}>
+                    <UserMeetings />
+                  </ProtectedRoute>
+                  }
+              />
               <Route
               path="/admin/directory"
               element={
