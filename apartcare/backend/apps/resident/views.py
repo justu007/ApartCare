@@ -26,6 +26,12 @@ class ResidentDashboardAPIView(APIView):
             block_name = "N/A"
             flat_name = "N/A"
             status = "INACTIVE"
+        bookings = user.bookings.all()
+        pending_bookings = bookings.filter(status='PENDING').count()
+        confirmed_bookings = bookings.filter(status='APPROVED').count()
+        rejected_bookings = bookings.filter(status='REJECTED').count()
+
+
 
         my_issues = Issue.objects.filter(creator=user)
         open_count = my_issues.filter(status='Open').count()
@@ -66,5 +72,10 @@ class ResidentDashboardAPIView(APIView):
                 "paid_amount": paid_amount,
                 "pending_count": pending_count,
                 "overdue_count": overdue_count
+            },
+            "user_bookings": {
+                "pending": pending_bookings,
+                "confirmed": confirmed_bookings,
+                "rejected": rejected_bookings
             }
         })

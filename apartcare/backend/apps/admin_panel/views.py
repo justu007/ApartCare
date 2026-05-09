@@ -16,6 +16,14 @@ from django.conf import settings
 from django.db.models import Sum
 from apps.bills.models import Bill
 from apps.salary.models import SalaryPayment,Transaction
+from apps.notification.models import Announcement 
+from apps.meeting.models import Meeting  
+from apps.apartment.models import Block
+from .serializers import CommunityDetailsSerializer
+from django.utils.timezone import now
+from dateutil.relativedelta import relativedelta
+from apps.hall.models import HallBooking 
+
 
 
 User = get_user_model()
@@ -228,10 +236,14 @@ class AdminDashboardAPIView(APIView):
     def get(self, request):
         admin_community = request.user.community
         
+
+        community_bookings = HallBooking.objects.filter(hall__community=admin_community)
+        pending_bookings = community_bookings.filter(status__iexact='PENDING').count()
+        confirmed_bookings = community_bookings.filter(status__in=['APPROVED', 'Approved']).count()
+
         if not admin_community:
             return Response({"error": "You are not assigned to any community."}, status=400)
 
-        # --- PROPERTY STATS ---
         total_blocks = Block.objects.filter(community=admin_community).count()
         total_flats = Flat.objects.filter(block__community=admin_community).count()
         
@@ -243,31 +255,55 @@ class AdminDashboardAPIView(APIView):
             role='STAFF', community=admin_community, is_active=True
         ).count()
 
-        # --- ISSUE STATS ---
         community_issues = Issue.objects.filter(creator__community=admin_community)
         open_issues = community_issues.filter(status='Open').count()
         assigned_issues = community_issues.filter(status='Assigned').count()
         in_progress_issues = community_issues.filter(status='In-Progress').count()
         resolved_issues = community_issues.filter(status='Resolved').count()
 
-        # --- 🎯 NEW: FINANCIAL STATS ---
         community_bills = Bill.objects.filter(flat__block__community=admin_community)
         
-        # 1. Money IN (Revenue from Paid Bills)
         total_revenue = community_bills.filter(status='PAID').aggregate(Sum('total_amount'))['total_amount__sum'] or 0.00
         
-        # 2. Pending Money (Unpaid & Overdue Bills)
         pending_revenue = community_bills.exclude(status='PAID').aggregate(Sum('total_amount'))['total_amount__sum'] or 0.00
         
-        # 3. Overdue Bills Count
         overdue_bills_count = community_bills.filter(status='OVERDUE').count()
 
-        # 4. Money OUT (Expenses / Salaries paid by the Admin)
-        # Assuming your Ledger logic saves Admin as the 'payer' for salaries/expenses
         total_expenses = Transaction.objects.filter(
             payer=request.user, 
             status='SUCCESS'
         ).aggregate(Sum('amount'))['amount__sum'] or 0.00
+
+
+        chart_data_finance = []
+        for i in range(5, -1, -1):
+            target_month = now() - relativedelta(months=i)
+            
+            month_revenue = community_bills.filter(
+                status='PAID', 
+                created_at__month=target_month.month, 
+                created_at__year=target_month.year
+            ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+            
+            month_expenses = Transaction.objects.filter(
+                payer=request.user, 
+                status='SUCCESS', 
+                created_at__month=target_month.month, 
+                created_at__year=target_month.year
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+            chart_data_finance.append({
+                "month": target_month.strftime("%b"),
+                "revenue": month_revenue,
+                "expenses": month_expenses
+            })
+
+
+
+        recent_announcements = Announcement.objects.filter(community=admin_community).order_by('-created_at')[:3].values('id', 'title', 'created_at')
+        upcoming_meetings = Meeting.objects.filter(community=admin_community, meeting_time__gte=now()).order_by('meeting_time')[:3].values('id', 'title', 'meeting_time')
+
+   
 
         return Response({
             "community_name": admin_community.name,
@@ -288,7 +324,15 @@ class AdminDashboardAPIView(APIView):
                 "pending_revenue": pending_revenue,
                 "total_expenses": total_expenses,
                 "overdue_bills": overdue_bills_count
-            }
+            },
+            "booking_statistics": {
+                "pending": pending_bookings,
+                "confirmed": confirmed_bookings
+            },
+
+            "chart_data_finance": chart_data_finance,
+            "recent_announcements": list(recent_announcements),
+            "upcoming_meetings": list(upcoming_meetings)
         })
 class AdminCommunityDetailsAPIView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]

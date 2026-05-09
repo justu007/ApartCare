@@ -1,6 +1,8 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+
+from .models import Issue
 from .models import Issue,IssueImage
 from .serializers import IssueSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -39,7 +41,6 @@ class IssueViewSet(viewsets.ModelViewSet):
         
         issue = serializer.save(creator=request.user)
         
-        # 1. Notify the Resident
         Notification.objects.create(
             user=issue.creator,
             notification_type='ISSUE',  
@@ -63,6 +64,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+
     
     def update(self, request, *args, **kwargs):
         kwargs['partial'] = True 
@@ -71,6 +73,17 @@ class IssueViewSet(viewsets.ModelViewSet):
         
         old_staff = instance.assigned_staff
         old_status = instance.status
+
+        try:
+            issue = Issue.objects.get(id=pk)
+        except Issue.DoesNotExist:
+            return Response({"error": "Issue not found"}, status=404)
+
+        if issue.status == 'Closed':
+            return Response(
+                {"error": "Management has closed this issue. It can no longer be edited."}, 
+                status=403
+            )   
 
         data = request.data.copy()
         if user.role == 'RESIDENT':
@@ -93,6 +106,8 @@ class IssueViewSet(viewsets.ModelViewSet):
         elif user.role == 'ADMIN':
             if 'assigned_staff' in data and instance.status == 'Open':
                 data['status'] = 'Assigned'
+
+
 
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)

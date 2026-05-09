@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
     getCommunityHalls, createCommunityHall, updateCommunityHall, 
     getAllHallBookings, updateBookingStatus 
 } from '../..//Api/hallbooking'; 
 
 const AdminManageHalls = () => {
-    const [activeTab, setActiveTab] = useState('VENUES'); 
+
+    const location = useLocation();
+    const passedTab = location.state?.defaultTab;
+
+    const [activeTab, setActiveTab] = useState(passedTab ? 'BOOKINGS' : 'VENUES'); 
     const [popup, setPopup] = useState({ isOpen: false, status: '', message: '' });
 
     const [halls, setHalls] = useState([]);
@@ -28,7 +33,7 @@ const AdminManageHalls = () => {
     // ==========================================
     const [bookings, setBookings] = useState([]);
     const [loadingBookings, setLoadingBookings] = useState(true);
-    const [bookingFilter, setBookingFilter] = useState('PENDING'); 
+    const [bookingFilter, setBookingFilter] = useState(passedTab === 'CONFIRMED' ? 'APPROVED' : 'PENDING');
     const [actionModal, setActionModal] = useState({ isOpen: false, type: '', booking: null });
     const [remarks, setRemarks] = useState('');
     const [processingBooking, setProcessingBooking] = useState(false);

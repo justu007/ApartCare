@@ -1,5 +1,5 @@
+
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
 import { BrowserRouter,Routes ,Route,Navigate} from "react-router-dom";
 import Navbar from './components/Navbar'
 import Login from "./pages/Auth/Login";
@@ -11,7 +11,7 @@ import ManageCommunity from "./pages/admin/ManageCommunity";
 import ResidentDashboard from "./pages/Resident/Dashboard";
 import StaffDashboard from "./pages/Staff/Dashboard";
 import Profile from "./pages/Profile/Profile";
-import { useSelector } from "react-redux";
+import { useDispatch,useSelector } from "react-redux";
 import { fetchProfile } from "./features/auth/authSlice";
 import CommunityList from "./pages/superadmin/CommunityList";
 import EditStaff from "./pages/admin/EditStaff";
@@ -29,9 +29,12 @@ import ResidentHallBooking from "./pages/Resident/ResidentHallBooking";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminMeetings from "./pages/admin/AdminMeetings";
 import UserMeetings from "./components/UserMeetings";
+import GlobalChat from "./components/GlobalChat";
+
 
 export default function App() {
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth?.user);
 
   useEffect(() => {
 
@@ -47,225 +50,233 @@ export default function App() {
         
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-cyan-600/30 blur-[120px] pointer-events-none"></div>
         
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-700/20 blur-[150px] pointer-events-none"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-700/20 blur-[150px] pointer-events-none"></div>
 
-        <div className="relative z-10">
+            <div className="relative z-10">
 
-          <Routes>
-            <Route path="/" element={<Navigate to="/auth/login/" replace />} />
-            <Route path="/auth/login/" element={<Login />} />
+              <Routes>
+                <Route path="/" element={<Navigate to="/auth/login/" replace />} />
+                <Route path="/auth/login/" element={<Login />} />
 
-            <Route path="/reset-password-confirm/:uid/:token" element={<ResetPasswordConfirm />} />
+                <Route path="/reset-password-confirm/:uid/:token" element={<ResetPasswordConfirm />} />
 
-            <Route
-              path="/super-admin/create-community"
-              element={
-                <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
-                  <CreateCommunity />
-                </ProtectedRoute>
-              }
-            />
-
-              <Route path="/admin/bills/generate" element={
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminGenerateBills />
-              </ProtectedRoute>
-              } 
-              />
-
-              <Route path="/super-admin/communities" 
-              element={
-              <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
-                <CommunityList />
-              </ProtectedRoute>
-              } />
-
-              <Route
-              path="/admin/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-              />
-              <Route path="/admin/issues" 
-              element={
-                <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  <AdminIssues />
-                </ProtectedRoute>    
-              }
-              />
-
-              <Route path="/admin/meetings" 
-                element={
-                  <ProtectedRoute allowedRoles={["ADMIN"]}>
-                    <AdminMeetings />
-                  </ProtectedRoute>    
-                }
-              />
-
-              <Route
-                path="/meetings"
-                element={
-                  <ProtectedRoute allowedRoles={["RESIDENT", "STAFF"]}>
-                    <UserMeetings />
-                  </ProtectedRoute>
+                <Route
+                  path="/super-admin/create-community"
+                  element={
+                    <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                      <CreateCommunity />
+                    </ProtectedRoute>
                   }
-              />
-              <Route
-              path="/admin/directory"
-              element={
-                <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  <CommunityDirectory />
-                </ProtectedRoute>
-                }
-              />
-            
+                />
 
-            <Route path="/admin/manage-venues" 
-              element={
-                <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  <AdminManageHalls />
-                </ProtectedRoute>
-              } 
-            />
-    
-              <Route 
-              path="/edit-staff/:id" 
-            
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                    <EditStaff />
-                </ProtectedRoute>
-                } 
-              />
-
-
-              <Route path="/admin/finance" 
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                    <AdminFinanceHub />
-                </ProtectedRoute>
-                } 
-              />
-
-              <Route path="/admin/announcements" 
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                    <AdminAnnouncements />
-                </ProtectedRoute>
-                } 
-              />
-
-
-              <Route path="/staff/salaries"
-              element={
-                <ProtectedRoute allowedRoles={['STAFF']}>
-                  <StaffSalaries />
-              </ProtectedRoute>
-              } />
-
-
-              <Route path="/resident/bills" 
-               element={
-                <ProtectedRoute allowedRoles={['RESIDENT']}>
-                    <ResidentBills />
-                </ProtectedRoute>
-                } />
-
-
-              <Route path="/resident/venues" 
-                element={
-                <ProtectedRoute allowedRoles={['RESIDENT']}>
-                  <ResidentHallBooking />
-                </ProtectedRoute>
+                  <Route path="/admin/bills/generate" element={
+                  <ProtectedRoute allowedRoles={["ADMIN"]}>
+                    <AdminGenerateBills />
+                  </ProtectedRoute>
                   } 
+                  />
+
+                  <Route path="/super-admin/communities" 
+                  element={
+                  <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                    <CommunityList />
+                  </ProtectedRoute>
+                  } />
+
+                  <Route
+                  path="/admin/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                  />
+                  <Route path="/admin/issues" 
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <AdminIssues />
+                    </ProtectedRoute>    
+                  }
+                  />
+
+                  <Route path="/admin/meetings" 
+                    element={
+                      <ProtectedRoute allowedRoles={["ADMIN"]}>
+                        <AdminMeetings />
+                      </ProtectedRoute>    
+                    }
+                  />
+
+                  <Route
+                    path="/meetings"
+                    element={
+                      <ProtectedRoute allowedRoles={["RESIDENT", "STAFF"]}>
+                        <UserMeetings />
+                      </ProtectedRoute>
+                      }
+                  />
+                  <Route
+                  path="/admin/directory"
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <CommunityDirectory />
+                    </ProtectedRoute>
+                    }
+                  />
+                
+
+                <Route path="/admin/manage-venues" 
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <AdminManageHalls />
+                    </ProtectedRoute>
+                  } 
+                />
+        
+                  <Route 
+                  path="/edit-staff/:id" 
+                
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <EditStaff />
+                    </ProtectedRoute>
+                    } 
+                  />
+
+
+                  <Route path="/admin/finance" 
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminFinanceHub />
+                    </ProtectedRoute>
+                    } 
+                  />
+
+                  <Route path="/admin/announcements" 
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <AdminAnnouncements />
+                    </ProtectedRoute>
+                    } 
+                  />
+
+
+                  <Route path="/staff/salaries"
+                  element={
+                    <ProtectedRoute allowedRoles={['STAFF']}>
+                      <StaffSalaries />
+                  </ProtectedRoute>
+                  } />
+
+
+                  <Route path="/resident/bills" 
+                  element={
+                    <ProtectedRoute allowedRoles={['RESIDENT']}>
+                        <ResidentBills />
+                    </ProtectedRoute>
+                    } />
+
+
+                  <Route path="/resident/venues" 
+                    element={
+                    <ProtectedRoute allowedRoles={['RESIDENT']}>
+                      <ResidentHallBooking />
+                    </ProtectedRoute>
+                      } 
+                  />
+
+
+                  <Route 
+                  path="/edit-resident/:id" 
+                
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <EditResident />
+                    </ProtectedRoute>
+                    } 
+                  />
+
+                  <Route
+                  path="/admin/setup"
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <ManageCommunity />
+                    </ProtectedRoute>
+                  }
+                  />
+
+                  <Route
+                  path="/resident/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={["RESIDENT"]}>
+                      <ResidentDashboard />
+                    </ProtectedRoute>
+                  }
+                  />
+
+                  <Route
+                  path="/staff/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={["STAFF"]}>
+                      <StaffDashboard />
+                    </ProtectedRoute>
+                  }
+                  />
+
+                  <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={["SUPER_ADMIN", "ADMIN", "RESIDENT", "STAFF"]}
+                    >
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                  />
+
+                  <Route path="/resident/issues" 
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[ "RESIDENT"]} >
+                      <IssueDashboard />
+                    </ProtectedRoute>
+                  } 
+                  />
+
+                  <Route path="/staff/issues" 
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[ "STAFF"]} >
+                      <StaffIssues />
+                    </ProtectedRoute>
+                  } 
+                  />
+
+                  <Route
+                  path="*"
+                  element={
+                    <div className="mt-20 text-2xl font-bold text-center">
+                      404 - Page Not Found
+                    </div>
+                  }
+                  />
+                
+
+                
+
+
+
+              </Routes>
+            </div>
+            {user && [ "ADMIN", "RESIDENT", "STAFF"].includes(user.role) && (
+              <GlobalChat 
+                  currentUserName={user.name} 
+                  currentUserRole={user.role} 
+                  communityId={user.community?.id || user.community_id} 
               />
+            )}   
 
 
-              <Route 
-              path="/edit-resident/:id" 
-            
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                    <EditResident />
-                </ProtectedRoute>
-                } 
-              />
-
-              <Route
-              path="/admin/setup"
-              element={
-                <ProtectedRoute allowedRoles={["ADMIN"]}>
-                  <ManageCommunity />
-                </ProtectedRoute>
-              }
-              />
-
-              <Route
-              path="/resident/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["RESIDENT"]}>
-                  <ResidentDashboard />
-                </ProtectedRoute>
-              }
-              />
-
-              <Route
-              path="/staff/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={["STAFF"]}>
-                  <StaffDashboard />
-                </ProtectedRoute>
-              }
-              />
-
-              <Route
-              path="/profile"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["SUPER_ADMIN", "ADMIN", "RESIDENT", "STAFF"]}
-                >
-                  <Profile />
-                </ProtectedRoute>
-              }
-              />
-
-              <Route path="/resident/issues" 
-              element={
-                <ProtectedRoute
-                  allowedRoles={[ "RESIDENT"]} >
-                  <IssueDashboard />
-                </ProtectedRoute>
-              } 
-              />
-
-              <Route path="/staff/issues" 
-              element={
-                <ProtectedRoute
-                  allowedRoles={[ "STAFF"]} >
-                  <StaffIssues />
-                </ProtectedRoute>
-              } 
-              />
-
-
-              <Route
-              path="*"
-              element={
-                <div className="mt-20 text-2xl font-bold text-center">
-                  404 - Page Not Found
-                </div>
-              }
-              />
-            
-
-            
-
-
-
-          </Routes>
-        </div>
       </div>
     </BrowserRouter>
   );

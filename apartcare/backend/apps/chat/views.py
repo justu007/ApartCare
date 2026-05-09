@@ -8,23 +8,33 @@ from .serializers import ChatMessageSerializer
 from apps.issue.models import Issue
 
 
-
-
-
-
 class ChatHistoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        user_community = getattr(user, 'managed_community', None) if user.role == 'ADMIN' else user.community
         
-        messages = ChatMessage.objects.filter(community=user_community).order_by('-timestamp')[:50]
-        messages = list(messages) 
-        messages = reversed(messages) 
+        user_community = getattr(user, 'managed_community', None) if getattr(user, 'role', '') == 'ADMIN' else getattr(user, 'community', None)
         
-        serializer = ChatMessageSerializer(messages, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if not user_community:
+            return Response([]) 
+
+        messages = ChatMessage.objects.filter(
+            community=user_community, 
+            issue__isnull=True
+        ).order_by('-timestamp')[:50]
+        
+        chat_data = []
+        
+        for msg in reversed(messages):
+            chat_data.append({
+                "message": msg.message,
+                "sender_name": getattr(msg.sender, 'name', msg.sender.username),
+                "sender_role": getattr(msg.sender, 'role', 'USER'),
+                "timestamp": msg.timestamp.strftime("%I:%M %p") 
+            })
+            
+        return Response(chat_data, status=status.HTTP_200_OK)
 
 
 class IssueChatHistoryAPIView(APIView):
