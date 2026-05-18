@@ -66,8 +66,8 @@ class IssueViewSet(viewsets.ModelViewSet):
 
 
     
-    def update(self, request, *args, **kwargs):
-        kwargs['partial'] = True 
+    def update(self, request, pk = None , *args, **kwargs):
+        kwargs['partial'] = True   
         instance = self.get_object()
         user = request.user
         
@@ -106,8 +106,6 @@ class IssueViewSet(viewsets.ModelViewSet):
         elif user.role == 'ADMIN':
             if 'assigned_staff' in data and instance.status == 'Open':
                 data['status'] = 'Assigned'
-
-
 
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
