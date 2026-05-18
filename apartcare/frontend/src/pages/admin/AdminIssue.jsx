@@ -92,7 +92,7 @@ const AdminIssues = () => {
             setMessage("Issue updated and assigned successfully!");
             setTimeout(() => {
                 setMessage('');
-                closeModal(); // Cleanly close modal after success
+                closeModal(); 
             }, 2000);
 
         } catch (err) {
@@ -103,7 +103,6 @@ const AdminIssues = () => {
         }
     };
 
-    // 🎯 NEW: WebSocket Connection Hook for Admin
     useEffect(() => {
         if (selectedIssue && activeTab === 'CHAT') {
             const fetchChatHistory = async () => {
@@ -146,12 +145,12 @@ const AdminIssues = () => {
 
     const openModal = (issue) => {
         setSelectedIssue({ ...issue });
-        setActiveTab('DETAILS'); // Always open to details first
+        setActiveTab('DETAILS'); 
         setError('');
         setMessage('');
     };
 
-    // 🎯 NEW: Clean close function
+ 
     const closeModal = () => {
         setSelectedIssue(null);
         setChatMessages([]);

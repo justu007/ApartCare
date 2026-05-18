@@ -2,19 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../api/axios'; 
 
 const GlobalChat = ({ currentUserRole, currentUserName, communityId }) => {
-    // UI State
     const [isOpen, setIsOpen] = useState(false);
     
-    // Chat State
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(true);
     
-    // Refs
     const wsRef = useRef(null);
     const messagesEndRef = useRef(null);
 
-    // 1. Fetch Chat History on Component Mount
     useEffect(() => {
         const fetchHistory = async () => {
             try {
@@ -29,7 +25,6 @@ const GlobalChat = ({ currentUserRole, currentUserName, communityId }) => {
         fetchHistory();
     }, []);
 
-    // 2. Connect to WebSocket in the background (stays connected even when closed)
     useEffect(() => {
         if (!communityId) return;
 
@@ -54,7 +49,6 @@ const GlobalChat = ({ currentUserRole, currentUserName, communityId }) => {
         };
     }, [communityId]);
 
-    // 3. Auto-scroll to bottom when messages change OR when chat is opened
     useEffect(() => {
         if (isOpen) {
             messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
