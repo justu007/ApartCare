@@ -30,6 +30,7 @@ import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminMeetings from "./pages/admin/AdminMeetings";
 import UserMeetings from "./components/UserMeetings";
 import GlobalChat from "./components/GlobalChat";
+import AdminPaymentReports from "./pages/admin/AdminPaymentReports";
 
 
 export default function App() {
@@ -107,6 +108,14 @@ export default function App() {
                     }
                   />
 
+                  <Route path="/admin/reports/payments" 
+                    element={
+                      <ProtectedRoute allowedRoles={["ADMIN"]}>
+                        <AdminPaymentReports />
+                      </ProtectedRoute>
+                      } 
+                  />  
+ 
                   <Route
                     path="/meetings"
                     element={

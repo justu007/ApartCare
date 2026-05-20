@@ -52,6 +52,10 @@ const Navbar = () => {
                 <Link to="/admin/finance" className="transition-colors hover:text-cyan-400 "> Finance & Salaries</Link>
                 <Link to="/admin/announcements" className="transition-colors hover:text-cyan-400 ">Announcements</Link>
                 <Link to="/admin/meetings" className="transition-colors hover:text-cyan-400 ">Meetings</Link>
+                <Link to="/admin/reports/payments" 
+                  className="transition-colors hover:text-cyan-400 ">
+                    📊 Payment Reports
+                </Link>
             </>
             )}
 

@@ -8,6 +8,11 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+
+    const [staffPage, setStaffPage] = useState(1);
+    const STAFF_PER_PAGE = 5;
+
+
     useEffect(() => {
         const fetchDashboard = async () => {
             try {
@@ -38,6 +43,11 @@ const AdminDashboard = () => {
         { name: 'Resolved', value: dashboardData.issue_statistics?.resolved || 0, color: '#10b981' }
     ].filter(item => item.value > 0); 
 
+
+    const staffData = dashboardData.performance_data || [];
+    const totalStaffPages = Math.ceil(staffData.length / STAFF_PER_PAGE);
+    const paginatedStaff = staffData.slice((staffPage - 1) * STAFF_PER_PAGE, staffPage * STAFF_PER_PAGE);
+
     return (
         <div className="max-w-7xl p-6 mx-auto mt-8">
             {/* Header */}
@@ -51,9 +61,16 @@ const AdminDashboard = () => {
             </div>
 
             {/* --- ROW 1: FINANCIAL OVERVIEW --- */}
+            {/* <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+                <h2 className="text-xl font-bold text-slate-200">Financial Overview</h2>
+                <Link to="/admin/finance" className="text-xs font-bold text-emerald-400 hover:text-emerald-300">View Master Ledger →</Link>
+            </div> */}
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
                 <h2 className="text-xl font-bold text-slate-200">Financial Overview</h2>
                 <Link to="/admin/finance" className="text-xs font-bold text-emerald-400 hover:text-emerald-300">View Master Ledger →</Link>
+                <Link to="/admin/reports/payments" className="text-xs font-bold text-emerald-400 hover:text-emerald-300">
+                    View Payment Reports →
+                </Link>
             </div>
             <div className="grid grid-cols-1 gap-4 mb-10 md:grid-cols-2 lg:grid-cols-4">
                 <div className="p-6 border shadow-lg bg-slate-900 border-slate-800 border-t-4 border-t-emerald-500 rounded-xl">
@@ -214,6 +231,76 @@ const AdminDashboard = () => {
                             </li>
                         )) : <p className="text-sm text-slate-500 italic">No recent announcements.</p>}
                     </ul>
+                </div>
+                <div className="mb-10 p-6 border shadow-lg bg-slate-900 border-slate-800 rounded-xl">
+                    <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-2">
+                        <h3 className="text-sm font-bold tracking-wider uppercase text-slate-400">Staff Performance Leaderboard</h3>
+                        {/* <Link to="/staff/issues" className="text-xs text-cyan-400 hover:text-cyan-300">Manage Staff</Link> */}
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-800 text-xs tracking-wider uppercase text-slate-500">
+                                    <th className="p-3 font-semibold">Staff Member</th>
+                                    <th className="p-3 text-center font-semibold">Assigned</th>
+                                    <th className="p-3 text-center font-semibold">In Progress</th>
+                                    <th className="p-3 text-center font-semibold">Resolved</th>
+                                    <th className="p-3 font-semibold">Resolution Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {paginatedStaff.length > 0 ? (
+                                    paginatedStaff.map((staff) => (
+                                        <tr key={staff.id} className="border-b border-slate-800/50 hover:bg-slate-800/25 transition-colors">
+                                            <td className="p-3 font-medium text-slate-200">{staff.name}</td>
+                                            <td className="p-3 text-center text-slate-400 font-medium">{staff.total_issues}</td>
+                                            <td className="p-3 text-center text-amber-400 font-medium">{staff.in_progress}</td>
+                                            <td className="p-3 text-center text-emerald-400 font-medium">{staff.resolved}</td>
+                                            <td className="p-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                                                        <div 
+                                                            className={`h-2.5 rounded-full ${staff.completion_rate > 75 ? 'bg-emerald-500' : staff.completion_rate > 40 ? 'bg-amber-500' : 'bg-rose-500'}`} 
+                                                            style={{ width: `${staff.completion_rate}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-slate-300 w-8">{staff.completion_rate}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" className="p-6 text-center text-sm text-slate-500 italic">No staff performance data available at this time.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                    {totalStaffPages > 1 && (
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-800/50">
+                        <span className="text-xs text-slate-500">
+                            Showing <span className="font-semibold text-slate-300">{(staffPage - 1) * STAFF_PER_PAGE + 1}</span> to <span className="font-semibold text-slate-300">{Math.min(staffPage * STAFF_PER_PAGE, staffData.length)}</span> of <span className="font-semibold text-slate-300">{staffData.length}</span> staff
+                        </span>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setStaffPage(prev => Math.max(1, prev - 1))}
+                                disabled={staffPage === 1}
+                                className="px-3 py-1.5 text-xs font-semibold rounded bg-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 hover:text-white transition-colors"
+                            >
+                                ← Prev
+                            </button>
+                            <button 
+                                onClick={() => setStaffPage(prev => Math.min(totalStaffPages, prev + 1))}
+                                disabled={staffPage === totalStaffPages}
+                                className="px-3 py-1.5 text-xs font-semibold rounded bg-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 hover:text-white transition-colors"
+                            >
+                                Next →
+                            </button>
+                        </div>
+                    </div>
+                    )}
                 </div>
 
             </div>

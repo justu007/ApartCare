@@ -89,3 +89,14 @@ export const broadcastAnnouncement = async (data) => {
     const response = await axiosInstance.post('/notifications/announcements/', data);
     return response.data;
 };
+
+
+export const getPaymentReports = async (startDate, endDate, status) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (status && status !== 'ALL') params.append('status', status);
+
+    const response = await axiosInstance.get(`/admin/reports/payments/?${params.toString()}`);
+    return response.data;
+};

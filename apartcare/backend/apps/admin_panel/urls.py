@@ -14,6 +14,8 @@ urlpatterns = [
     path('community-details/', AdminCommunityDetailsAPIView.as_view()),
     path('users/<int:pk>/reset-password/', AdminForceResetPasswordAPIView.as_view(), name='admin-force-reset'),
     path('flats/occupied/', OccupiedFlatsListAPIView.as_view()),
+    # path('staff-performance/', StaffPerformanceAPIView.as_view(), name='staff-performance')
+    path('reports/payments/', AdminPaymentReportAPIView.as_view(), name='payment-reports'),
   
 ]
 
