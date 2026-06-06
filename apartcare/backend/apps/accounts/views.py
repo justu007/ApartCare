@@ -154,6 +154,8 @@ class  ProfileViewAPIView(APIView):
                 data['monthly_salary'] = profile.monthly_salary
 
         return Response(data)
+
+        
     def patch(self, request):
         serializer = ProfileUpdateSerializer(
             request.user, 
@@ -249,15 +251,18 @@ class ChangePasswordAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = ChangePasswordSerializer(data=request.data)
+        serializer = PasswordChangeSerializer(data=request.data)
         if serializer.is_valid():
             user = request.user
-            if not user.check_password(serializer.validated_data['old_password']):
-                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+            if not user.check_password(serializer.validated_data['current_password']):
+                return Response({"current_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
             
             user.set_password(serializer.validated_data['new_password'])
             user.save()
-            return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Your password has been changed successfully."}, 
+                status=status.HTTP_200_OK
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 

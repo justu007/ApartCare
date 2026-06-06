@@ -3,14 +3,13 @@ from apps.apartment.models import Community
 from apps.accounts.models import User
 from django.db import transaction
 
-class CreateCommunityAdmin(serializers.ModelSerializer):
 
-    name = serializers.CharField()
-    address = serializers.CharField()
-
-    admin_name  = serializers.CharField()
+class CreateCommunityAdmin(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    address = serializers.CharField(max_length=255)
+    admin_name = serializers.CharField(max_length=255)
     admin_email = serializers.EmailField()
-    admin_password = serializers.CharField(write_only= True)
+    admin_password = serializers.CharField(write_only=True)
 
     class Meta:
         model = Community
@@ -21,31 +20,35 @@ class CreateCommunityAdmin(serializers.ModelSerializer):
             'admin_email',
             'admin_password'
         ]
+        
     @transaction.atomic
-    def create(self,validated_data):
+    def create(self, validated_data):
+        raw_password = validated_data['admin_password']
 
 
         community_admin = User.objects.create_admin_user(
-            name = validated_data['admin_name'],
-            email = validated_data['admin_email'],
-            password = validated_data['admin_password'],
-            role = 'ADMIN'
+            email=validated_data['admin_email'],
+            password=raw_password,
+            name=validated_data['admin_name']
         )
 
         community = Community.objects.create(
-            name = validated_data['name'],
-            address = validated_data['address'],
-            admin = community_admin,
-            is_active = True
-
+            name=validated_data['name'],
+            address=validated_data['address'],
+            admin=community_admin,
+            is_active=True
         )
+
         community_admin.community = community
         community_admin.save()
 
         return {
-            "community" : community,
-            "admin" : community_admin
+            "community": community,
+            "admin": community_admin,
+            "clear_text_password": raw_password
         }
+
+
 class CommunityAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

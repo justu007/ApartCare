@@ -1,17 +1,21 @@
+import re
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
-from .models import Meeting
+from .models import Meeting ,MeetingAttendance
 from .serializers import MeetingSerializer
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
 from apps.notification.models import Notification 
-
+from rest_framework.parsers import MultiPartParser
+import csv
+from apps.accounts.permissions import IsAdmin
 
 User = get_user_model()
+
 class MeetingAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -42,10 +46,6 @@ class MeetingAPIView(APIView):
         serializer = MeetingSerializer(data=request.data)
         if serializer.is_valid():
             meeting = serializer.save(community=admin_community, organizer=user)
-            
-            # 🎯 NEW: LIVE NOTIFICATION LOGIC
-            
-            # 1. Find the target users based on the audience choice
             target_users = User.objects.filter(community=admin_community)
             if meeting.target_audience == 'RESIDENT':
                 target_users = target_users.filter(role='RESIDENT')
@@ -58,21 +58,16 @@ class MeetingAPIView(APIView):
             formatted_time = meeting.meeting_time.strftime("%b %d at %I:%M %p")
             notif_message = f"New Meeting Scheduled: {meeting.title} on {formatted_time}"
 
-            # 2. Loop through users, save to DB, and broadcast via WebSockets
             for target_user in target_users:
-                # Save to database so they see it even if they are offline
                 Notification.objects.create(
                     user=target_user,
                     message=notif_message,
-                    # Add a type field if your model has one, e.g., type='MEETING'
                 )
 
-                # Instantly push to the user's active WebSocket connection
-                # NOTE: Ensure "notifications_{target_user.id}" matches the exact group name defined in your NotificationConsumer!
                 async_to_sync(channel_layer.group_send)(
                     f"notifications_{target_user.id}", 
                     {
-                        "type": "send_notification", # Matches the consumer method
+                        "type": "send_notification", 
                         "message": notif_message,
                         "notification_type": "MEETING" 
                     }
@@ -80,3 +75,87 @@ class MeetingAPIView(APIView):
 
             return Response({"message": "Meeting scheduled successfully!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class UploadAttendanceCSVAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser] 
+
+    def post(self, request, meeting_id):
+        file_obj = request.FILES.get('attendance_file')
+        if not file_obj:
+            return Response({"error": "No file uploaded"}, status=400)
+
+        try:
+            meeting = Meeting.objects.get(id=meeting_id, community=request.user.community)
+        except Meeting.DoesNotExist:
+            return Response({"error": "Meeting not found"}, status=404)
+
+        raw_bytes = file_obj.read()
+        decoded_text = raw_bytes.decode('utf-8-sig').replace('\r', '') 
+        raw_lines = decoded_text.splitlines()
+
+        clean_lines = []
+        table_started = False
+        
+        for line in raw_lines:
+            if "Full Name" in line or "Time in Call" in line:
+                table_started = True
+            
+            if table_started:
+                clean_lines.append(line)
+
+        if not clean_lines:
+            clean_lines = raw_lines
+
+        reader = csv.DictReader(clean_lines)
+        
+        added_count = 0
+        for row in reader:
+            full_name = row.get('Full Name', '').strip()
+            time_in_call = row.get('Time in Call', '').strip() 
+            
+            if not full_name:
+                continue
+
+            duration_numbers = re.findall(r'\d+', time_in_call)
+            
+            if '.' in time_in_call and len(duration_numbers) >= 3:
+                duration_minutes = int(duration_numbers[1])
+                
+            elif '.' in time_in_call and len(duration_numbers) == 2:
+                duration_minutes = int(duration_numbers[0])
+                
+            elif ',' in time_in_call and len(duration_numbers) >= 2:
+                duration_minutes = int(duration_numbers[1])
+                
+            else:
+                duration_minutes = int(duration_numbers[0]) if duration_numbers else 0
+            user = None
+            
+            user = User.objects.filter(name__iexact=full_name).first()
+            
+            if not user:
+                community_users = User.objects.filter(community=request.user.community)
+                for potential_user in community_users:
+                    if potential_user.name and potential_user.name.lower() in full_name.lower():
+                        user = potential_user
+                        break
+
+            if not user:
+                first_word = full_name.split()[0] if full_name.split() else full_name
+                user = User.objects.filter(name__icontains=first_word).first()
+            
+            if user:
+                MeetingAttendance.objects.update_or_create(
+                    meeting=meeting,
+                    user=user,
+                    defaults={'duration_minutes': duration_minutes}
+                )
+                added_count += 1
+
+        return Response({
+            "status": "Success", 
+            "message": f"Successfully recorded attendance for {added_count} residents."
+        })

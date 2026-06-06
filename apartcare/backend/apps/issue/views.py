@@ -13,15 +13,20 @@ from django.contrib.auth import get_user_model
 class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
     permission_classes = [IsAuthenticated]
-
-
     parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
         user = self.request.user
         
+        user_community = getattr(user, 'managed_community', None) if user.role == 'ADMIN' else getattr(user, 'community', None)
+        
+        print(f"User: {user.email}, Role: {user.role}, Community: {user_community.name if user_community else 'None'}")
+        
+        if not user_community:
+            raise ValidationError({"detail": "No valid community configuration mapped to this profile node."})
+
         if user.role == 'ADMIN':
-            return Issue.objects.all() 
+            return Issue.objects.filter(creator__community=user_community) 
             
         elif user.role == 'STAFF':
             return Issue.objects.filter(assigned_staff=user) 
@@ -29,8 +34,8 @@ class IssueViewSet(viewsets.ModelViewSet):
         elif user.role == 'RESIDENT':
             return Issue.objects.filter(creator=user) 
             
-        return Issue.objects.none()
 
+        return Issue.objects.none()
 
     def create(self, request, *args, **kwargs):
         if request.user.role != 'RESIDENT':
@@ -65,64 +70,79 @@ class IssueViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-    
-    def update(self, request, pk = None , *args, **kwargs):
-        kwargs['partial'] = True   
-        instance = self.get_object()
-        user = request.user
+    def update(self, request, pk=None, *args, **kwargs):
+        kwargs['partial'] = True 
         
-        old_staff = instance.assigned_staff
-        old_status = instance.status
-
         try:
             issue = Issue.objects.get(id=pk)
         except Issue.DoesNotExist:
             return Response({"error": "Issue not found"}, status=404)
 
+        user = request.user
+
+        if user.role == 'STAFF' and issue.assigned_staff != user:
+            return Response(
+                {"detail": "You do not have permission to update an issue that is not assigned to you."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        elif user.role == 'RESIDENT' and issue.creator != user:
+            return Response(
+                {"detail": "You can only modify issues you created."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         if issue.status == 'Closed':
             return Response(
                 {"error": "Management has closed this issue. It can no longer be edited."}, 
                 status=403
-            )   
+            ) 
 
-        data = request.data.copy()
+        old_staff = issue.assigned_staff
+        old_status = issue.status
+
+        new_status = request.data.get('status', '').strip()
+
+        updated_data = {}
+
         if user.role == 'RESIDENT':
-            if instance.status != 'Open':
+            if issue.status != 'Open':
                  return Response({"error": "You cannot edit an issue once staff has been assigned."}, status=status.HTTP_403_FORBIDDEN)
             
-            data.pop('status', None)
-            data.pop('assigned_staff', None)
-            data.pop('admin_notes', None)
+            for field in ['title', 'description']:
+                if field in request.data:
+                    updated_data[field] = request.data.get(field)
 
         elif user.role == 'STAFF':
             allowed_statuses = ['In-Progress', 'Resolved']
-            new_status = data.get('status')
             
             if new_status and new_status not in allowed_statuses:
                 return Response({"error": f"Staff can only change status to: {allowed_statuses}"}, status=status.HTTP_400_BAD_REQUEST)
             
-            data = {'status': new_status} if new_status else {}
+            if new_status:
+                updated_data['status'] = new_status
 
         elif user.role == 'ADMIN':
-            if 'assigned_staff' in data and instance.status == 'Open':
-                data['status'] = 'Assigned'
+            if 'status' in request.data:
+                updated_data['status'] = request.data.get('status')
+            if 'assigned_staff' in request.data:
+                updated_data['assigned_staff'] = request.data.get('assigned_staff')
+                if issue.status == 'Open':
+                    updated_data['status'] = 'Assigned'
 
-        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer = self.get_serializer(issue, data=updated_data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         updated_issue = serializer.save()
 
-        if user.role == 'ADMIN' and 'assigned_staff' in data:
+        if user.role == 'ADMIN' and 'assigned_staff' in updated_data:
             new_staff = updated_issue.assigned_staff
             if new_staff and old_staff != new_staff:
-                
                 Notification.objects.create(
                     user=new_staff,
                     notification_type='ISSUE',
                     title="New Issue Assigned",
-                    message=f"You have been assigned to a new issue: '{updated_issue.title}'. Please check your dashboard."
+                    message=f"You have been assigned to a new issue: '{updated_issue.title}'."
                 )
-                
                 Notification.objects.create(
                     user=updated_issue.creator,
                     notification_type='ISSUE',
@@ -131,15 +151,13 @@ class IssueViewSet(viewsets.ModelViewSet):
                 )
 
         if user.role == 'STAFF' and old_status != 'Resolved' and updated_issue.status == 'Resolved':
-            
             Notification.objects.create(
                 user=updated_issue.creator,
                 notification_type='ISSUE',
                 title="Issue Resolved! 🎉",
                 message=f"Your issue '{updated_issue.title}' has been successfully resolved by {user.name}."
             )
-            
-            admin_user = request.user.community.admin
+            admin_user = getattr(request.user.community, 'admin', None)
             if admin_user:
                 Notification.objects.create(
                     user=admin_user,

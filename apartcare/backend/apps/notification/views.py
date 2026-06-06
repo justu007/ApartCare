@@ -127,14 +127,19 @@ class MarkNotificationReadAPIView(APIView):
     def put(self, request):
         notification_id = request.data.get('notification_id')
 
+        if not notification_id:
+            return Response({"error": "notification_id is required"}, status=400)
+
         if notification_id == 'ALL':
-            Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
-            return Response({"message": "All notifications marked as read."}, status=status.HTTP_200_OK)
-        
+            request.user.notifications.filter(is_read=False).update(is_read=True) 
+            
+            return Response({"status": "All notifications marked as read"}, status=200)
+
         try:
-            notif = Notification.objects.get(id=notification_id, user=request.user)
-            notif.is_read = True
-            notif.save()
-            return Response({"message": "Notification marked as read."}, status=status.HTTP_200_OK)
-        except Notification.DoesNotExist:
-            return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+            notification = request.user.notifications.get(id=notification_id) 
+            notification.is_read = True
+            notification.save()
+            return Response({"status": "Notification marked as read"}, status=200)
+        except Exception as e:
+            return Response({"error": "Notification not found"}, status=404)
+

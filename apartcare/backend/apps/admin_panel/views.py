@@ -1,3 +1,5 @@
+
+
 from django.shortcuts import render
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
@@ -26,7 +28,7 @@ from apps.hall.models import HallBooking
 from django.db.models import Count, Q, Sum
 from apps.accounts.models import User
 from django.contrib.auth import get_user_model
-
+from apps.webapp.models import GlobalSaaSRate, CommunitySubscription, SaaSPaymentLedger
 
 User = get_user_model()
 
@@ -440,3 +442,8 @@ class OccupiedFlatsListAPIView(generics.ListAPIView):
             block__community = self.request.user.community, 
             occupied=True
         ).order_by('block__name', 'name')
+
+
+
+
+

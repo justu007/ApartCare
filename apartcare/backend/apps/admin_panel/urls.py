@@ -16,6 +16,7 @@ urlpatterns = [
     path('flats/occupied/', OccupiedFlatsListAPIView.as_view()),
     # path('staff-performance/', StaffPerformanceAPIView.as_view(), name='staff-performance')
     path('reports/payments/', AdminPaymentReportAPIView.as_view(), name='payment-reports'),
+    
   
 ]
 
