@@ -7,7 +7,6 @@ import {
   updateResident,
 } from "../../api/admin";
 
-
 export const toggleDeactivate = createAsyncThunk(
   "users/toggleDeactivate",
   async ({ id, is_active }) => {
@@ -23,7 +22,6 @@ export const toggleDeactivate = createAsyncThunk(
   }
 );
 
-
 export const editUser = createAsyncThunk(
   "users/editUser",
   async ({ id, data }) => {
@@ -31,7 +29,6 @@ export const editUser = createAsyncThunk(
     return res.data.data;
   }
 );
-
 
 export const editStaff = createAsyncThunk(
   "users/editStaff",
@@ -41,38 +38,40 @@ export const editStaff = createAsyncThunk(
   }
 );
 
-
 export const editResident = createAsyncThunk(
   "users/editResident",
   async ({ id, data }) => {
     const res = await updateResident(id, data);
-    return res.data.data;
+    return res.data.data; 
   }
 );
 
+
 const userSlice = createSlice({
   name: "users",
-
   initialState: {
     users: [],
   },
-
   reducers: {},
-
   extraReducers: (builder) => {
-      builder.addCase(toggleDeactivate.fulfilled, (state, action) => {
-
+    builder.addCase(toggleDeactivate.fulfilled, (state, action) => {
       const { id, is_active } = action.payload;
-
       const user = state.users.find((u) => u.id === id);
-
-      if (user) {
-        user.is_active = is_active;
-      }
-
+      if (user) user.is_active = is_active;
     });
 
+    builder.addCase(editResident.fulfilled, (state, action) => {
+      if (action.payload) {
+        const userIndex = state.users.findIndex((u) => u.id === action.meta.arg.id);
+        if (userIndex !== -1) {
+          state.users[userIndex] = {
+            ...state.users[userIndex],
+            flat: action.payload.flat,
+            block: action.payload.block
+          };
+        }
+      }
+    });
   },
 });
-
 export default userSlice.reducer;

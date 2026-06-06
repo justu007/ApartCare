@@ -1,6 +1,327 @@
 
+// import { useEffect } from "react";
+// import { BrowserRouter,Routes ,Route,Navigate} from "react-router-dom";
+// import Navbar from './components/Navbar'
+// import Login from "./pages/Auth/Login";
+// import ProtectedRoute from "./components/ProtectedRoute";
+// import CreateCommunity from "./pages/superadmin/CreateCommunity";
+// import AdminDashboard from "./pages/admin/Dashboard";
+// import CommunityDirectory from "./pages/admin/CommunityDirectory";
+// import ManageCommunity from "./pages/admin/ManageCommunity";
+// import ResidentDashboard from "./pages/Resident/Dashboard";
+// import StaffDashboard from "./pages/Staff/Dashboard";
+// import Profile from "./pages/Profile/Profile";
+// import { useDispatch,useSelector } from "react-redux";
+// import { fetchProfile } from "./features/auth/authSlice";
+// import CommunityList from "./pages/superadmin/CommunityList";
+// import EditStaff from "./pages/admin/EditStaff";
+// import EditResident from "./pages/admin/EditResident";
+// import ResetPasswordConfirm from './pages/Auth/ResetPasswordConfirm';
+// import IssueDashboard from "./pages/Resident/IssueDashboard";
+// import AdminIssues from "./pages/admin/AdminIssue";
+// import StaffIssues from "./pages/Staff/StaffIssues";
+// import AdminGenerateBills from "./pages/admin/AdminGenerateBills";
+// import ResidentBills from "./pages/Resident/ResidentBills";
+// import StaffSalaries from "./pages/Staff/StaffSalaries";
+// import AdminFinanceHub from "./pages/admin/AdminSalaries";
+// import AdminManageHalls from "./pages/admin/AdminManageHalls";
+// import ResidentHallBooking from "./pages/Resident/ResidentHallBooking";
+// import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
+// import AdminMeetings from "./pages/admin/AdminMeetings";
+// import UserMeetings from "./components/UserMeetings";
+// import GlobalChat from "./components/GlobalChat";
+// import AdminPaymentReports from "./pages/admin/AdminPaymentReports";
+// import Dashboard_SuperAdmin from "./pages/superadmin/Dashboard_SuperAdmin";
+// import SuperAdminRates from "./pages/superadmin/SuperAdminRates";
+// import CommunitySubscriptionView from "./pages/admin/CommunitySubscriptionView";
+
+
+// export default function App() {
+//   const dispatch = useDispatch();
+//   const user = useSelector((state) => state.auth?.user);
+
+//   useEffect(() => {
+
+//       dispatch(fetchProfile());
+    
+//   }, []);
+
+
+//   return (
+//     <BrowserRouter>
+//       <Navbar />
+//       <div className="relative min-h-screen overflow-hidden bg-[#020617] text-slate-200">
+        
+//         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-cyan-600/30 blur-[120px] pointer-events-none"></div>
+        
+//           <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-700/20 blur-[150px] pointer-events-none"></div>
+
+//             <div className="relative z-10">
+
+//               <Routes>
+//                 <Route path="/" element={<Navigate to="/auth/login/" replace />} />
+//                 <Route path="/auth/login/" element={<Login />} />
+
+//                 <Route path="/reset-password-confirm/:uid/:token" element={<ResetPasswordConfirm />} />
+
+//                 <Route path="/super-admin/Dashboard" 
+//                   element={
+//                   <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+//                     <Dashboard_SuperAdmin />
+//                   </ProtectedRoute>
+//                   } />
+
+//                 <Route
+//                   path="/super-admin/create-community"
+//                   element={
+//                     <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+//                       <CreateCommunity />
+//                     </ProtectedRoute>
+//                   }
+//                 />
+
+
+//                 <Route
+//                   path="/super-admin/sassrate"
+//                   element={
+//                     <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+//                       <SuperAdminRates />
+//                     </ProtectedRoute>
+//                   }
+//                 />
+
+//                 <Route
+//                   path="/admin/subscription"
+//                   element={
+//                     <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                       <CommunitySubscriptionView />
+//                     </ProtectedRoute>
+//                   }
+//                 />
+
+
+//                   <Route path="/admin/bills/generate" element={
+//                   <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                     <AdminGenerateBills />
+//                   </ProtectedRoute>
+//                   } 
+//                   />
+
+//                   <Route path="/super-admin/communities" 
+//                   element={
+//                   <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+//                     <CommunityList />
+//                   </ProtectedRoute>
+//                   } />
+
+//                   <Route
+//                   path="/admin/dashboard"
+//                   element={
+//                     <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                       <AdminDashboard />
+//                     </ProtectedRoute>
+//                   }
+//                   />
+//                   <Route path="/admin/issues" 
+//                   element={
+//                     <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                       <AdminIssues />
+//                     </ProtectedRoute>    
+//                   }
+//                   />
+
+//                   <Route path="/admin/meetings" 
+//                     element={
+//                       <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                         <AdminMeetings />
+//                       </ProtectedRoute>    
+//                     }
+//                   />
+
+//                   <Route path="/admin/reports/payments" 
+//                     element={
+//                       <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                         <AdminPaymentReports />
+//                       </ProtectedRoute>
+//                       } 
+//                   />  
+ 
+//                   <Route
+//                     path="/meetings"
+//                     element={
+//                       <ProtectedRoute allowedRoles={["RESIDENT", "STAFF"]}>
+//                         <UserMeetings />
+//                       </ProtectedRoute>
+//                       }
+//                   />
+//                   <Route
+//                   path="/admin/directory"
+//                   element={
+//                     <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                       <CommunityDirectory />
+//                     </ProtectedRoute>
+//                     }
+//                   />
+                
+
+//                 <Route path="/admin/manage-venues" 
+//                   element={
+//                     <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                       <AdminManageHalls />
+//                     </ProtectedRoute>
+//                   } 
+//                 />
+        
+//                   <Route 
+//                   path="/edit-staff/:id" 
+                
+//                   element={
+//                     <ProtectedRoute allowedRoles={['ADMIN']}>
+//                         <EditStaff />
+//                     </ProtectedRoute>
+//                     } 
+//                   />
+
+
+//                   <Route path="/admin/finance" 
+//                   element={
+//                     <ProtectedRoute allowedRoles={['ADMIN']}>
+//                         <AdminFinanceHub />
+//                     </ProtectedRoute>
+//                     } 
+//                   />
+
+//                   <Route path="/admin/announcements" 
+//                   element={
+//                     <ProtectedRoute allowedRoles={['ADMIN']}>
+//                         <AdminAnnouncements />
+//                     </ProtectedRoute>
+//                     } 
+//                   />
+
+
+//                   <Route path="/staff/salaries"
+//                   element={
+//                     <ProtectedRoute allowedRoles={['STAFF']}>
+//                       <StaffSalaries />
+//                   </ProtectedRoute>
+//                   } />
+
+
+//                   <Route path="/resident/bills" 
+//                   element={
+//                     <ProtectedRoute allowedRoles={['RESIDENT']}>
+//                         <ResidentBills />
+//                     </ProtectedRoute>
+//                     } />
+
+
+//                   <Route path="/resident/venues" 
+//                     element={
+//                     <ProtectedRoute allowedRoles={['RESIDENT']}>
+//                       <ResidentHallBooking />
+//                     </ProtectedRoute>
+//                       } 
+//                   />
+
+
+//                   <Route 
+//                   path="/edit-resident/:id" 
+                
+//                   element={
+//                     <ProtectedRoute allowedRoles={['ADMIN']}>
+//                         <EditResident />
+//                     </ProtectedRoute>
+//                     } 
+//                   />
+
+//                   <Route
+//                   path="/admin/setup"
+//                   element={
+//                     <ProtectedRoute allowedRoles={["ADMIN"]}>
+//                       <ManageCommunity />
+//                     </ProtectedRoute>
+//                   }
+//                   />
+
+//                   <Route
+//                   path="/resident/dashboard"
+//                   element={
+//                     <ProtectedRoute allowedRoles={["RESIDENT"]}>
+//                       <ResidentDashboard />
+//                     </ProtectedRoute>
+//                   }
+//                   />
+
+//                   <Route
+//                   path="/staff/dashboard"
+//                   element={
+//                     <ProtectedRoute allowedRoles={["STAFF"]}>
+//                       <StaffDashboard />
+//                     </ProtectedRoute>
+//                   }
+//                   />
+
+//                   <Route
+//                   path="/profile"
+//                   element={
+//                     <ProtectedRoute
+//                       allowedRoles={["SUPER_ADMIN", "ADMIN", "RESIDENT", "STAFF"]}
+//                     >
+//                       <Profile />
+//                     </ProtectedRoute>
+//                   }
+//                   />
+
+//                   <Route path="/resident/issues" 
+//                   element={
+//                     <ProtectedRoute
+//                       allowedRoles={[ "RESIDENT"]} >
+//                       <IssueDashboard />
+//                     </ProtectedRoute>
+//                   } 
+//                   />
+
+//                   <Route path="/staff/issues" 
+//                   element={
+//                     <ProtectedRoute
+//                       allowedRoles={[ "STAFF"]} >
+//                       <StaffIssues />
+//                     </ProtectedRoute>
+//                   } 
+//                   />
+
+//                   <Route
+//                   path="*"
+//                   element={
+//                     <div className="mt-20 text-2xl font-bold text-center">
+//                       404 - Page Not Found
+//                     </div>
+//                   }
+//                   />
+                
+
+                
+
+
+
+//               </Routes>
+//             </div>
+//             {user && [ "ADMIN", "RESIDENT", "STAFF"].includes(user.role) && (
+//               <GlobalChat 
+//                   currentUserName={user.name} 
+//                   currentUserRole={user.role} 
+//                   communityId={user.community?.id || user.community_id} 
+//               />
+//             )}   
+
+
+//       </div>
+//     </BrowserRouter>
+//   );
+// }
 import { useEffect } from "react";
-import { BrowserRouter,Routes ,Route,Navigate} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from './components/Navbar'
 import Login from "./pages/Auth/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -11,9 +332,9 @@ import ManageCommunity from "./pages/admin/ManageCommunity";
 import ResidentDashboard from "./pages/Resident/Dashboard";
 import StaffDashboard from "./pages/Staff/Dashboard";
 import Profile from "./pages/Profile/Profile";
-import { useDispatch,useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { fetchProfile } from "./features/auth/authSlice";
-import CommunityList from "./pages/superadmin/CommunityList";
+// import CommunityList from "./pages/superadmin/CommunityList";
 import EditStaff from "./pages/admin/EditStaff";
 import EditResident from "./pages/admin/EditResident";
 import ResetPasswordConfirm from './pages/Auth/ResetPasswordConfirm';
@@ -31,18 +352,20 @@ import AdminMeetings from "./pages/admin/AdminMeetings";
 import UserMeetings from "./components/UserMeetings";
 import GlobalChat from "./components/GlobalChat";
 import AdminPaymentReports from "./pages/admin/AdminPaymentReports";
+import Dashboard_SuperAdmin from "./pages/superadmin/Dashboard_SuperAdmin";
+import SuperAdminRates from "./pages/superadmin/SuperAdminRates";
+import CommunitySubscriptionView from "./pages/admin/CommunitySubscriptionView";
 
+import SuperAdminAnnouncements from "./components/SuperAdminAnnouncements";
+import GlobalOperatorAnnouncements from "./components/GlobalOperatorAnnouncements";
 
 export default function App() {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth?.user);
 
   useEffect(() => {
-
-      dispatch(fetchProfile());
-    
+    dispatch(fetchProfile());
   }, []);
-
 
   return (
     <BrowserRouter>
@@ -50,242 +373,254 @@ export default function App() {
       <div className="relative min-h-screen overflow-hidden bg-[#020617] text-slate-200">
         
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-cyan-600/30 blur-[120px] pointer-events-none"></div>
-        
-          <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-700/20 blur-[150px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-700/20 blur-[150px] pointer-events-none"></div>
 
-            <div className="relative z-10">
+        <div className="relative z-10">
+          <Routes>
+            <Route path="/" element={<Navigate to="/auth/login/" replace />} />
+            <Route path="/auth/login/" element={<Login />} />
+            <Route path="/reset-password-confirm/:uid/:token" element={<ResetPasswordConfirm />} />
 
-              <Routes>
-                <Route path="/" element={<Navigate to="/auth/login/" replace />} />
-                <Route path="/auth/login/" element={<Login />} />
+            {/* 🏢 TRACK A: SUPER ADMIN CORE CONTROL PANELS */}
+            <Route path="/super-admin/Dashboard" 
+              element={
+                <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                  <Dashboard_SuperAdmin />
+                </ProtectedRoute>
+              } 
+            />
 
-                <Route path="/reset-password-confirm/:uid/:token" element={<ResetPasswordConfirm />} />
+            <Route path="/super-admin/create-community"
+              element={
+                <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                  <CreateCommunity />
+                </ProtectedRoute>
+              }
+            />
 
-                <Route
-                  path="/super-admin/create-community"
-                  element={
-                    <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
-                      <CreateCommunity />
-                    </ProtectedRoute>
-                  }
-                />
+            <Route path="/super-admin/sassrate"
+              element={
+                <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                  <SuperAdminRates />
+                </ProtectedRoute>
+              }
+            />
 
-                  <Route path="/admin/bills/generate" element={
-                  <ProtectedRoute allowedRoles={["ADMIN"]}>
-                    <AdminGenerateBills />
-                  </ProtectedRoute>
-                  } 
-                  />
+            {/* 🎯 NEW ROUTE: Super Admin Broadcaster Toolset Panel */}
+            <Route path="/super-admin/announcements"
+              element={
+                <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                  <SuperAdminAnnouncements />
+                </ProtectedRoute>
+              }
+            />
 
-                  <Route path="/super-admin/communities" 
-                  element={
-                  <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
-                    <CommunityList />
-                  </ProtectedRoute>
-                  } />
-
-                  <Route
-                  path="/admin/dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={["ADMIN"]}>
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  }
-                  />
-                  <Route path="/admin/issues" 
-                  element={
-                    <ProtectedRoute allowedRoles={["ADMIN"]}>
-                      <AdminIssues />
-                    </ProtectedRoute>    
-                  }
-                  />
-
-                  <Route path="/admin/meetings" 
-                    element={
-                      <ProtectedRoute allowedRoles={["ADMIN"]}>
-                        <AdminMeetings />
-                      </ProtectedRoute>    
-                    }
-                  />
-
-                  <Route path="/admin/reports/payments" 
-                    element={
-                      <ProtectedRoute allowedRoles={["ADMIN"]}>
-                        <AdminPaymentReports />
-                      </ProtectedRoute>
-                      } 
-                  />  
- 
-                  <Route
-                    path="/meetings"
-                    element={
-                      <ProtectedRoute allowedRoles={["RESIDENT", "STAFF"]}>
-                        <UserMeetings />
-                      </ProtectedRoute>
-                      }
-                  />
-                  <Route
-                  path="/admin/directory"
-                  element={
-                    <ProtectedRoute allowedRoles={["ADMIN"]}>
-                      <CommunityDirectory />
-                    </ProtectedRoute>
-                    }
-                  />
-                
-
-                <Route path="/admin/manage-venues" 
-                  element={
-                    <ProtectedRoute allowedRoles={["ADMIN"]}>
-                      <AdminManageHalls />
-                    </ProtectedRoute>
-                  } 
-                />
-        
-                  <Route 
-                  path="/edit-staff/:id" 
-                
-                  element={
-                    <ProtectedRoute allowedRoles={['ADMIN']}>
-                        <EditStaff />
-                    </ProtectedRoute>
-                    } 
-                  />
+            {/* <Route path="/super-admin/communities" 
+              element={
+                <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
+                  <CommunityList />
+                </ProtectedRoute>
+              } 
+            /> */}
 
 
-                  <Route path="/admin/finance" 
-                  element={
-                    <ProtectedRoute allowedRoles={['ADMIN']}>
-                        <AdminFinanceHub />
-                    </ProtectedRoute>
-                    } 
-                  />
+            {/* 🏢 TRACK B: COMMUNITY ADMIN PANEL CONTROL SYSTEM */}
+            <Route path="/admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-                  <Route path="/admin/announcements" 
-                  element={
-                    <ProtectedRoute allowedRoles={['ADMIN']}>
-                        <AdminAnnouncements />
-                    </ProtectedRoute>
-                    } 
-                  />
+            <Route path="/admin/subscription"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <CommunitySubscriptionView />
+                </ProtectedRoute>
+              }
+            />
 
+            {/* 🎯 NEW ROUTE: Tenant-Side HQ Notices Bulletin view board for building managers */}
+            <Route path="/admin/hq-updates"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <GlobalOperatorAnnouncements />
+                </ProtectedRoute>
+              }
+            />
 
-                  <Route path="/staff/salaries"
-                  element={
-                    <ProtectedRoute allowedRoles={['STAFF']}>
-                      <StaffSalaries />
-                  </ProtectedRoute>
-                  } />
+            <Route path="/admin/bills/generate" element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminGenerateBills />
+              </ProtectedRoute>
+            } />
 
+            <Route path="/admin/issues" 
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminIssues />
+                </ProtectedRoute>    
+              }
+            />
 
-                  <Route path="/resident/bills" 
-                  element={
-                    <ProtectedRoute allowedRoles={['RESIDENT']}>
-                        <ResidentBills />
-                    </ProtectedRoute>
-                    } />
+            <Route path="/admin/meetings" 
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminMeetings />
+                </ProtectedRoute>    
+              }
+            />
 
+            <Route path="/admin/reports/payments" 
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminPaymentReports />
+                </ProtectedRoute>
+              } 
+            />  
 
-                  <Route path="/resident/venues" 
-                    element={
-                    <ProtectedRoute allowedRoles={['RESIDENT']}>
-                      <ResidentHallBooking />
-                    </ProtectedRoute>
-                      } 
-                  />
+            <Route path="/admin/directory"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <CommunityDirectory />
+                </ProtectedRoute>
+              }
+            />
 
+            <Route path="/admin/manage-venues" 
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminManageHalls />
+                </ProtectedRoute>
+              } 
+            />
+    
+            <Route path="/edit-staff/:id" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <EditStaff />
+                </ProtectedRoute>
+              } 
+            />
 
-                  <Route 
-                  path="/edit-resident/:id" 
-                
-                  element={
-                    <ProtectedRoute allowedRoles={['ADMIN']}>
-                        <EditResident />
-                    </ProtectedRoute>
-                    } 
-                  />
+            <Route path="/admin/finance" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminFinanceHub />
+                </ProtectedRoute>
+              } 
+            />
 
-                  <Route
-                  path="/admin/setup"
-                  element={
-                    <ProtectedRoute allowedRoles={["ADMIN"]}>
-                      <ManageCommunity />
-                    </ProtectedRoute>
-                  }
-                  />
+            <Route path="/admin/announcements" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminAnnouncements />
+                </ProtectedRoute>
+              } 
+            />
 
-                  <Route
-                  path="/resident/dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={["RESIDENT"]}>
-                      <ResidentDashboard />
-                    </ProtectedRoute>
-                  }
-                  />
+            <Route path="/edit-resident/:id" 
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <EditResident />
+                </ProtectedRoute>
+              } 
+            />
 
-                  <Route
-                  path="/staff/dashboard"
-                  element={
-                    <ProtectedRoute allowedRoles={["STAFF"]}>
-                      <StaffDashboard />
-                    </ProtectedRoute>
-                  }
-                  />
-
-                  <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={["SUPER_ADMIN", "ADMIN", "RESIDENT", "STAFF"]}
-                    >
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                  />
-
-                  <Route path="/resident/issues" 
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={[ "RESIDENT"]} >
-                      <IssueDashboard />
-                    </ProtectedRoute>
-                  } 
-                  />
-
-                  <Route path="/staff/issues" 
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={[ "STAFF"]} >
-                      <StaffIssues />
-                    </ProtectedRoute>
-                  } 
-                  />
-
-                  <Route
-                  path="*"
-                  element={
-                    <div className="mt-20 text-2xl font-bold text-center">
-                      404 - Page Not Found
-                    </div>
-                  }
-                  />
-                
-
-                
+            <Route path="/admin/setup"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <ManageCommunity />
+                </ProtectedRoute>
+              }
+            />
 
 
+            {/* 👥 TRACK C: RESIDENTS & STAFFS PORTALS */}
+            <Route path="/meetings"
+              element={
+                <ProtectedRoute allowedRoles={["RESIDENT", "STAFF"]}>
+                  <UserMeetings />
+                </ProtectedRoute>
+              }
+            />
 
-              </Routes>
-            </div>
-            {user && [ "ADMIN", "RESIDENT", "STAFF"].includes(user.role) && (
-              <GlobalChat 
-                  currentUserName={user.name} 
-                  currentUserRole={user.role} 
-                  communityId={user.community?.id || user.community_id} 
-              />
-            )}   
+            <Route path="/resident/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["RESIDENT"]}>
+                  <ResidentDashboard />
+                </ProtectedRoute>
+              }
+            />
 
+            <Route path="/staff/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["STAFF"]}>
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
 
+            <Route path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN", "RESIDENT", "STAFF"]}>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="/resident/issues" 
+              element={
+                <ProtectedRoute allowedRoles={[ "RESIDENT"]} >
+                  <IssueDashboard />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route path="/staff/issues" 
+              element={
+                <ProtectedRoute allowedRoles={[ "STAFF"]} >
+                  <StaffIssues />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route path="/staff/salaries"
+              element={
+                <ProtectedRoute allowedRoles={['STAFF']}>
+                  <StaffSalaries />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route path="/resident/bills" 
+              element={
+                <ProtectedRoute allowedRoles={['RESIDENT']}>
+                    <ResidentBills />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route path="/resident/venues" 
+              element={
+                <ProtectedRoute allowedRoles={['RESIDENT']}>
+                  <ResidentHallBooking />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route path="*" element={<div className="mt-20 text-2xl font-bold text-center">404 - Page Not Found</div>} />
+          </Routes>
+        </div>
+
+        {user && [ "ADMIN", "RESIDENT", "STAFF"].includes(user.role) && (
+          <GlobalChat 
+              currentUserName={user.name} 
+              currentUserRole={user.role} 
+              communityId={user.community?.id || user.community_id} 
+          />
+        )}   
       </div>
     </BrowserRouter>
   );

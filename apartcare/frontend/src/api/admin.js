@@ -100,3 +100,25 @@ export const getPaymentReports = async (startDate, endDate, status) => {
     const response = await axiosInstance.get(`/admin/reports/payments/?${params.toString()}`);
     return response.data;
 };
+
+export const markNotificationRead = async (id) => {
+    const response = await axiosInstance.patch(`/notifications/${id}/read/`);
+    return response.data;
+};
+
+export const getMeetingHistory = async () => {
+    const response = await axiosInstance.get('/meeting/meetings_list/');
+    return response.data;
+};
+
+export const uploadAttendanceCSV = async (meetingId, file) => {
+    const formData = new FormData();
+    formData.append('attendance_file', file);
+
+    const response = await axiosInstance.post(`/meeting/${meetingId}/upload-attendance/`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};

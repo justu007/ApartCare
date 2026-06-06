@@ -2,8 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../api/axios'; 
 import { useSelector } from 'react-redux';
 
+import { useNavigate } from 'react-router-dom';
+import { markNotificationRead } from '../api/admin';
+
 const NotificationBell = () => {
     const { user } = useSelector((state) => state.auth);
+
+    const navigate = useNavigate();
     
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -94,6 +99,86 @@ const NotificationBell = () => {
         }
     };
 
+    // const handleNotificationClick = async (notification) => {
+    //     if (!notification.is_read) {
+    //         await markSingleAsRead(notification.id);
+    //     }
+
+    //     setIsOpen(false);
+
+    //     const message = notification.message.toLowerCase();
+        
+    //     if (message.includes('issue') || message.includes('leak') || message.includes('complaint')) {
+    //         navigate('/admin/issues', { state: { defaultTab: 'OPEN' } });
+    //     } 
+    //     else if (message.includes('hall') || message.includes('booking')) {
+    //         navigate('/admin/manage-venues', { state: { defaultTab: 'PENDING' } });
+    //     } 
+    //     else if (message.includes('bill') || message.includes('payment')) {
+    //         navigate('/admin/reports/payments');
+    //     }
+    //     else {
+    //         navigate('/admin/dashboard'); 
+    //     }
+    // };
+    const handleNotificationClick = async (notification) => {
+        if (!notification.is_read) {
+            await markSingleAsRead(notification.id);
+        }
+
+        setIsOpen(false);
+
+        const userRole = user?.role?.toUpperCase(); 
+        const message = notification.message.toLowerCase();
+        
+
+        let issuePath = '/resident/issues'; 
+        let hallPath = '/resident/bookings';
+        let paymentPath = '/resident/payments';
+        let meetingPath = '/resident/dashboard';
+
+        if (userRole === 'ADMIN') {
+            issuePath = '/admin/issues';
+            hallPath = '/admin/manage-venues';
+            paymentPath = '/admin/reports/payments';
+            meetingPath = '/admin/meetings';
+        } else if (userRole === 'STAFF') {
+            issuePath = '/staff/issues'; 
+            hallPath = '/staff/dashboard';
+            paymentPath = '/staff/salaries';
+            meetingPath = '/meetings';
+        } else if (userRole === 'RESIDENT') {
+            issuePath = '/resident/issues'; 
+            hallPath = '/resident/hall-bookings';
+            paymentPath = '/resident/bills';
+            meetingPath = '/meetings';
+        }
+
+        if (message.includes('issue') || message.includes('leak') || message.includes('complaint')) {
+            if (message.includes('resolved')) {
+                navigate(issuePath, { state: { defaultTab: 'RESOLVED' } });
+            } else if (message.includes('assigned') || message.includes('progress')) {
+                navigate(issuePath, { state: { defaultTab: 'ASSIGNED' } });
+            } else {
+                navigate(issuePath, { state: { defaultTab: 'OPEN' } });
+            }
+        } 
+        else if (message.includes('hall') || message.includes('booking')) {
+            navigate(hallPath);
+        } 
+        else if (message.includes('bill') || message.includes('payment') || message.includes('salary')) {
+            navigate(paymentPath);
+        }
+        else if (message.includes('meeting') || message.includes('scheduled')) {
+            navigate(meetingPath);
+        }
+        else {
+            if (userRole === 'ADMIN') navigate('/admin/dashboard');
+            else if (userRole === 'STAFF') navigate('/staff/dashboard');
+            else navigate('/resident/dashboard');
+        }
+    };
+
     return (
         <div className="relative" ref={dropdownRef}>
             {/* The Bell Icon */}
@@ -133,9 +218,10 @@ const NotificationBell = () => {
                                 {notifications.map((notif) => (
                                     <li 
                                         key={notif.id} 
-                                        onClick={() => !notif.is_read && markSingleAsRead(notif.id)}
+                                        onClick={() => handleNotificationClick(notif)}
                                         className={`p-4 transition-colors cursor-pointer hover:bg-slate-800/50 ${notif.is_read ? 'opacity-60' : 'bg-slate-800/20'}`}
                                     >
+                                        
                                         <div className="flex items-start gap-3">
                                             {/* Status Dot */}
                                             <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${notif.is_read ? 'bg-slate-600' : 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]'}`}></div>

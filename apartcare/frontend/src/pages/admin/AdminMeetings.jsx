@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../../api/axios'; 
 
 const AdminMeetings = () => {
@@ -6,7 +6,12 @@ const AdminMeetings = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     
-    // Form State
+    const [expandedMeetingId, setExpandedMeetingId] = useState(null);
+    const [uploadingId, setUploadingId] = useState(null);
+    const fileInputRef = useRef(null);
+
+    const [alertWindow, setAlertWindow] = useState({ show: false, message: '', type: 'success' });
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -20,14 +25,21 @@ const AdminMeetings = () => {
         fetchMeetings();
     }, []);
 
+    const triggerAlert = (message, type = 'success') => {
+        setAlertWindow({ show: true, message, type });
+        setTimeout(() => {
+            setAlertWindow({ show: false, message: '', type: 'success' });
+        }, 3500);
+    };
+
     const fetchMeetings = async () => {
         setLoading(true);
         try {
             const res = await axiosInstance.get('/meeting/meetings_list/');
-            console.log("Fetched meetings:", res.data);
             setMeetings(res.data);
         } catch (error) {
             console.error("Error fetching meetings", error);
+            triggerAlert("Failed to fetch community meetings from the server.", "error");
         } finally {
             setLoading(false);
         }
@@ -45,8 +57,9 @@ const AdminMeetings = () => {
             await axiosInstance.post('/meeting/meetings_list/', formData);
             setFormStatus({ error: '', message: 'Meeting scheduled successfully!', loading: false });
             
-            // Refresh list and reset form
             fetchMeetings();
+            triggerAlert("New meeting scheduled and added successfully!");
+            
             setTimeout(() => {
                 setShowModal(false);
                 setFormData({ title: '', description: '', meeting_time: '', meeting_link: '', target_audience: 'ALL' });
@@ -55,21 +68,90 @@ const AdminMeetings = () => {
 
         } catch (error) {
             console.error("Failed to schedule", error);
-            setFormStatus({ 
-                error: error.response?.data?.detail || 'Failed to schedule meeting. Check your inputs.', 
-                message: '', 
-                loading: false 
-            });
+            const errorMsg = error.response?.data?.detail || 'Failed to schedule meeting. Check your inputs.';
+            setFormStatus({ error: errorMsg, message: '', loading: false });
+            triggerAlert(errorMsg, "error");
         }
     };
 
-    // 🎯 Splitting logic: Upcoming vs History
+    const toggleAccordion = (id) => {
+        setExpandedMeetingId(expandedMeetingId === id ? null : id);
+    };
+
+    const handleFileChange = async (event, meetingId) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        setUploadingId(meetingId);
+        const uploadData = new FormData();
+        uploadData.append('attendance_file', file);
+
+        try {
+            await axiosInstance.post(`/meeting/${meetingId}/upload-attendance/`, uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            triggerAlert("Attendance log processed and saved successfully!", "success");
+            fetchMeetings(); 
+        } catch (error) {
+            console.error("Upload failed", error);
+            triggerAlert("Failed to upload attendance. Ensure the file layout is a valid CSV.", "error");
+        } finally {
+            setUploadingId(null);
+            if (fileInputRef.current) fileInputRef.current.value = ""; 
+        }
+    };
+
     const now = new Date();
     const upcomingMeetings = meetings.filter(m => new Date(m.meeting_time) >= now);
-    const pastMeetings = meetings.filter(m => new Date(m.meeting_time) < now).reverse(); // Reverse to show newest history first
+    const pastMeetings = meetings.filter(m => new Date(m.meeting_time) < now).reverse();
 
     return (
-        <div className="max-w-7xl p-6 mx-auto mt-8">
+        <div className="max-w-7xl p-6 mx-auto mt-8 relative">
+            
+            {/* 🎯 UPDATED: Center-Screen Status Notification Window */}
+            {alertWindow.show && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+                    <div className={`max-w-md w-full p-6 rounded-2xl border shadow-2xl bg-slate-900 flex flex-col items-center text-center scale-up ${
+                        alertWindow.type === 'success' 
+                        ? 'border-emerald-500/30 text-emerald-400 shadow-emerald-950/40' 
+                        : 'border-rose-500/30 text-rose-400 shadow-rose-950/40'
+                    }`}>
+                        
+                        {/* Status Graphic/Icon */}
+                        <div className={`p-3 rounded-full mb-4 ${alertWindow.type === 'success' ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
+                            {alertWindow.type === 'success' ? (
+                                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            ) : (
+                                <svg className="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                            )}
+                        </div>
+
+                        <h3 className="font-black text-lg text-slate-100">
+                            {alertWindow.type === 'success' ? 'Operation Successful' : 'Action Failed'}
+                        </h3>
+                        
+                        <p className="text-sm text-slate-400 mt-2 max-w-sm">
+                            {alertWindow.message}
+                        </p>
+
+                        <button 
+                            onClick={() => setAlertWindow({ show: false, message: '', type: 'success' })}
+                            className={`mt-5 px-5 py-2 rounded-xl text-xs font-bold text-slate-900 transition-colors ${
+                                alertWindow.type === 'success' 
+                                ? 'bg-emerald-400 hover:bg-emerald-300' 
+                                : 'bg-rose-400 hover:bg-rose-300'
+                            }`}
+                        >
+                            Dismiss Window
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
@@ -108,20 +190,92 @@ const AdminMeetings = () => {
 
                     {/* --- MEETING HISTORY --- */}
                     <section>
-                        <h2 className="text-xl font-bold text-slate-200 mb-4 border-b border-slate-800 pb-2">Meeting History</h2>
+                        <h2 className="text-xl font-bold text-slate-200 mb-4 border-b border-slate-800 pb-2">Meeting History & Attendance</h2>
                         {pastMeetings.length === 0 ? (
                             <div className="p-8 text-center border border-dashed border-slate-700 rounded-2xl text-slate-500">
                                 No past meetings found.
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
-                                {pastMeetings.map(meeting => (
-                                    <MeetingCard key={meeting.id} meeting={meeting} isUpcoming={false} />
-                                ))}
+                            <div className="space-y-4">
+                                {pastMeetings.map((meeting) => {
+                                    const dateObj = new Date(meeting.meeting_time);
+                                    const dateStr = dateObj.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                                    
+                                    return (
+                                        <div key={meeting.id} className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                                            
+                                            {/* Accordion Header */}
+                                            <div 
+                                                className="p-5 flex flex-wrap md:flex-nowrap items-center justify-between cursor-pointer hover:bg-slate-700/50 transition-colors"
+                                                onClick={() => toggleAccordion(meeting.id)}
+                                            >
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-200">{meeting.title}</h3>
+                                                    <p className="text-sm text-slate-400 mt-1">{dateStr}</p>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-4 mt-3 md:mt-0">
+                                                    <div className="text-right">
+                                                        <p className="text-2xl font-black text-cyan-400">{meeting.attendees?.length || 0}</p>
+                                                        <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Attendees</p>
+                                                    </div>
+                                                    <svg className={`w-6 h-6 text-slate-400 transition-transform duration-300 ${expandedMeetingId === meeting.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+
+                                            {/* Accordion Expanded Details */}
+                                            {expandedMeetingId === meeting.id && (
+                                                <div className="p-5 border-t border-slate-700 bg-slate-800/50">
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <h4 className="font-bold text-slate-300">Joined Residents List</h4>
+                                                        
+                                                        <div>
+                                                            <input 
+                                                                type="file" 
+                                                                accept=".csv" 
+                                                                className="hidden" 
+                                                                id={`csv-upload-${meeting.id}`}
+                                                                onChange={(e) => handleFileChange(e, meeting.id)}
+                                                                ref={fileInputRef}
+                                                            />
+                                                            <label 
+                                                                htmlFor={`csv-upload-${meeting.id}`}
+                                                                className={`px-4 py-2 text-sm font-bold text-white rounded cursor-pointer transition-colors shadow-lg ${uploadingId === meeting.id ? 'bg-slate-600' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+                                                            >
+                                                                {uploadingId === meeting.id ? 'Uploading...' : '📁 Upload CSV'}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    {meeting.attendees && meeting.attendees.length > 0 ? (
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                            {meeting.attendees.map((user, idx) => (
+                                                                <div key={idx} className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                                                                    <div className="w-8 h-8 rounded-full bg-cyan-900/50 flex items-center justify-center text-cyan-400 font-bold border border-cyan-500/30">
+                                                                        {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm font-bold text-slate-200">{user.name}</p>
+                                                                        {user.duration_minutes !== undefined && <p className="text-xs text-slate-400">Duration: {user.duration_minutes} min</p>}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-6 text-slate-500 text-sm italic bg-slate-900/30 rounded-lg">
+                                                            No attendance data yet. Upload the Google Meet CSV to populate this list!
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </section>
-
                 </div>
             )}
 
@@ -179,14 +333,11 @@ const AdminMeetings = () => {
     );
 };
 
-// --- Helper Component for the Meeting Cards ---
 const MeetingCard = ({ meeting, isUpcoming }) => {
-    // Format Date & Time cleanly
     const dateObj = new Date(meeting.meeting_time);
     const dateStr = dateObj.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
     const timeStr = dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
-    // Audience badges
     const audienceColors = {
         'ALL': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
         'RESIDENT': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
@@ -212,7 +363,6 @@ const MeetingCard = ({ meeting, isUpcoming }) => {
                 <div className="text-xs text-slate-500">
                     Host: <span className="text-slate-300">{meeting.organizer_name}</span>
                 </div>
-                {/* 🎯 Join Video Call Redirect Link */}
                 <a 
                     href={meeting.meeting_link} 
                     target="_blank" 
