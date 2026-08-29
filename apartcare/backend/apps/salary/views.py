@@ -13,7 +13,8 @@ from django.db.models import Q
 from .serializers import TransactionSerializer
 from django.utils import timezone
 from apps.notification.models import Notification
-
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 User = get_user_model()
 
 class AdminPaySalaryAPIView(APIView):
@@ -64,12 +65,21 @@ class AdminPaySalaryAPIView(APIView):
                 payment_gateway='MANUAL_LOG',
                 status='SUCCESS'
             )
-            Notification.objects.create(
-                user=staff,
-                notification_type='SALARY',
-                title="Salary Credited! 💰",
-                message=f"Your salary of ₹{amount} for {month}/{year} has been processed and logged by the Admin."
-            )
+            if staff:
+                Notification.objects.create(
+                    user=staff,
+                    notification_type='SALARY',
+                    title="Salary Credited! 💰",
+                    message=f"Your salary of ₹{amount} for {month}/{year} has been processed and logged by the Admin."
+                )
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_admin_community_{staff.id}",{
+                        "type" : "send_notification",
+                        "title" : "Salary Credited! 💰",
+                        "message" :f"Your salary of ₹{amount} for {month}/{year} has been processed and logged by the Admin."
+                    }
+                )
 
 
         return Response({"message": f"Successfully processed ₹{amount} salary for {staff.name}."}, status=status.HTTP_201_CREATED)

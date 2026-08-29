@@ -32,24 +32,13 @@ from apps.webapp.models import GlobalSaaSRate, CommunitySubscription, SaaSPaymen
 
 User = get_user_model()
 
-class TestAdmin(APIView):
-    permission_classes = [IsAuthenticated, IsAdmin]
-
-    def get(self, request):
-        return Response({
-            "message": "Admin access working",
-            "user": request.user.email,
-            "role": request.user.role,
-            "community": request.user.community.id if request.user.community else None
-        })
-
 class AdminResidentListAPIView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request):
         residents = User.objects.filter(
-            role='RESIDENT',
-            community=request.user.community 
+            role = 'RESIDENT',
+            community = request.user.community 
         ).select_related(
             'resident_profile',
             'resident_profile__flat',
@@ -73,8 +62,8 @@ class AdminStaffListAPIView(APIView):
 
     def get(self, request):
         staffs = User.objects.filter(
-            role='STAFF',
-            community=request.user.community
+            role = 'STAFF',
+            community = request.user.community
         ).select_related(
             'staff_profile',
         )
@@ -145,7 +134,7 @@ class AdminUpdateStaffProfileAPIView(APIView):
             return Response(
                 {
                 "error":"staff profile doesnt exists"
-                },status=404
+                },status=HTTP_400_BAD_REQUEST
             )
         serializer = AdminUpdateStaffProfile(
             staffprofile,
@@ -164,6 +153,43 @@ class AdminUpdateStaffProfileAPIView(APIView):
     
 
 class AdminUpdateResidentProfileAPIView(APIView):
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     def put (self,request,user_id):
         try:
             resident_profile = AdminResident_Profile.objects.get(user__id=user_id,user__community=request.user.community)

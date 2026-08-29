@@ -11,6 +11,8 @@ import razorpay
 from django.conf import settings
 from django.utils import timezone
 from django.db import transaction as db_transaction
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from .models import HallBooking
 from apps.salary.models import Transaction
@@ -40,13 +42,14 @@ class ManageCommunityHallsAPIView(APIView):
             return Response({"error": "Only admins can add new halls."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = CommunityHallSerializer(data=request.data)
-        
+        print(serializer)
         if serializer.is_valid():
             hall = serializer.save(community=request.user.community, is_active=True)
+            print(hall)
             
             images_data = request.FILES.getlist('images') 
             for image_data in images_data:
-                HallImage.objects.create(hall=hall, image=image_data)
+                HallImage.objects.create(hall=hall, image = image_data)
                 
             response_serializer = CommunityHallSerializer(hall)
             return Response({"message": "Hall added successfully!", "hall": response_serializer.data}, status=status.HTTP_201_CREATED)
@@ -107,37 +110,6 @@ class HallAvailabilityAPIView(APIView):
 
 
 
-# class ResidentHallAPIView(APIView):
-#     permission_classes = [IsAuthenticated, IsResident]
-
-#     def get(self, request):
-#         my_bookings = HallBooking.objects.filter(resident=request.user).order_by('-created_at')
-#         serializer = HallBookingSerializer(my_bookings, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     def post(self, request):
-#         serializer = HallBookingSerializer(data=request.data, context={'request': request})
-        
-#         if serializer.is_valid():
-#             serializer.save(
-#                 resident=request.user, 
-#                 community=request.user.community, 
-#                 status='PENDING'
-#             )
-
-#             hall_name = request.data.get('hall_name', 'a hall')
-#             booking_date = request.data.get('booking_date', 'a date')
-#             Notification.objects.create(
-#                 user = request.user.community.admin,
-#                 notification_type='Hall Request',
-#                 title="New Hall Booking Request",
-#                 message=f"A new booking request has been submitted for {hall_name} on {booking_date}."
-#             )
-#             return Response({"message": "Booking request submitted successfully! Pending admin approval."}, status=status.HTTP_201_CREATED)
-            
-
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class ResidentHallAPIView(APIView):
     permission_classes = [IsAuthenticated, IsResident]
 
@@ -150,7 +122,6 @@ class ResidentHallAPIView(APIView):
 
     def post(self, request):
         serializer = HallBookingSerializer(data=request.data, context={'request': request})
-        
         if serializer.is_valid():
             
             booking = serializer.save(
@@ -158,13 +129,24 @@ class ResidentHallAPIView(APIView):
                 community=request.user.community, 
                 status='PENDING'
             )
-
+            admin_user = getattr(request.user.community, 'admin', None)
             Notification.objects.create(
-                user=request.user.community.admin,
+                user=admin_user,
                 notification_type='Hall Request',
                 title="New Hall Booking Request",
                 message=f"A new booking request has been submitted for {booking.hall.name} on {booking.booking_date}."
             )
+            channel_layer = get_channel_layer()
+            if admin_user:
+
+                async_to_sync(channel_layer.group_send)(
+                    f"user_admin_community_{admin_user.id}", 
+                    {
+                        "type": "send_notification",
+                        "title": "New Hall Booking Request",
+                        "message": f"A new booking request has been submitted for {booking.hall.name} on {booking.booking_date}."
+                    }
+                )
             
             return Response({"message": "Booking request submitted successfully! Pending admin approval."}, status=status.HTTP_201_CREATED)
             
@@ -197,6 +179,20 @@ class AdminHallAPIView(APIView):
                 title=f"Hall Booking {booking.status.title()}",
                 message=f"Your booking request for {booking.hall.name} on {booking.booking_date} has been {booking.status.lower()} by the Admin."
             )
+            if booking.resident:
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_admin_community_{booking.resident.id}",
+                    {
+                        'type':'send_notification',
+                        'title': f"Hall Booking {booking.status.title()}",
+                        'message': f"Your booking request for {booking.hall.name} on {booking.booking_date} has been {booking.status.lower()} by the Admin."  
+                    }
+                )
+
+
+
+
             return Response({"message": f"Booking {booking.status.lower()} successfully!"}, status=status.HTTP_200_OK)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -269,6 +265,25 @@ class VerifyHallPaymentAPIView(APIView):
                     payment_gateway='RAZORPAY',
                     status='SUCCESS'
                 )
+                admin_user = request.user.community.admin
+                if admin_user:
+                    admin_notification = Notification.objects.create(
+                        user=admin_user,
+                        notification_type= 'SYSTEM',
+                        title ='Hall Booking Payment Has Done',
+                        message = f"hall booking payment has done by the payee {request.user}"
+                    )
+                    channel_layer = get_channel_layer()
+
+                    async_to_sync(channel_layer.group_send)(
+
+                        f"user_admin_community_{admin_user.id}",
+                        {
+                            "type" : "send_notification",
+                            "title" : "Hall Booking Payment done!!!!",
+                            "message" : f"payment for the hall booking {booking} by the user {request.user.name} has done"
+                        }
+                    )
 
             return Response({"message": "Payment verified and successful!"}, status=status.HTTP_200_OK)
 

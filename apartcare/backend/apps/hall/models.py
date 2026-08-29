@@ -5,12 +5,17 @@ from django.conf import settings
 
 
 class CommunityHall(models.Model):
+    STATUS_CHOICES = (
+        ('AC', 'ac'),
+        ('NON_AC', 'non_ac')
+    )
     community = models.ForeignKey('apartment.Community', on_delete=models.CASCADE, related_name='halls')
     
     name = models.CharField(max_length=150) 
     description = models.TextField(blank=True, null=True)
     capacity = models.PositiveIntegerField(help_text="Maximum seating/standing capacity")
     
+    ac_room = models.CharField(max_length=20,choices = STATUS_CHOICES,default='AC')
 
     rent_per_seat = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     
@@ -39,6 +44,7 @@ class HallBooking(models.Model):
         ('CANCELLED', 'Cancelled'),
     )
 
+
     community = models.ForeignKey('apartment.Community', on_delete=models.CASCADE, related_name='hall_bookings')
 
     hall = models.ForeignKey(CommunityHall, on_delete=models.CASCADE, related_name='bookings',blank=True)  
@@ -48,12 +54,11 @@ class HallBooking(models.Model):
     booking_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
-    
     attendees = models.PositiveIntegerField(default=1)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_paid = models.BooleanField(default=False)
     
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length = 20, choices = STATUS_CHOICES)
     admin_remarks = models.TextField(blank=True, null=True) 
     
     created_at = models.DateTimeField(auto_now_add=True)

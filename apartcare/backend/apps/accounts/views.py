@@ -20,6 +20,10 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.encoding import force_str
 from django.core.mail import EmailMessage 
+from apps.bills.models import Bill
+from apps.salary.models import Transaction
+from django.db.models import Sum
+from dateutil.relativedelta import relativedelta
 
 class SomeProtectedAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -34,20 +38,61 @@ class AdminCreateUserAPIView(APIView):
     permission_classes = [IsAuthenticated,IsAdmin]
 
     def post(self,request):
-        serializer  =  AdminCreateUserSerializer(data = request.data,context = {'request' :request})
+        data = request.data
+        password = data['password']
+        serializer = AdminCreateUserSerializer(data = data, context={'request':request})
 
         if serializer.is_valid():
-            serializer.save()
+            infos = serializer.save()
+            if infos.role == 'STAFF':
+                staff_mail = infos.email
+                staff_name = infos.name
+                password = password
+                community = infos.community
+
+                email_subject = "Welcome to ApartCare! Your Staff Portal Credentials 🏢"
+                email_message = f"""Hi {staff_name},
+
+                Your apartment {community} portal has been successfully set up on ApartCare!
+
+                Below are your secure login credentials to access your administrative dashboard:
+
+                Login Portal URL: http://localhost:5173/auth/login  
+                Username/Email: {infos}
+                Password: {password}
+
+                ⚠️ Security Reminder: Please protect these credentials. You can update your access password at any time via your account Profile Settings tab.
+
+                Best regards,
+                The ApartCare Systems Management Team
+                """
+                try:
+                    send_mail(
+                        subject  = email_subject,
+                        message  = email_message,
+                        from_email = settings.DEFAULT_FROM_EMAIL,
+                        recipient_list = [staff_mail],
+                        fail_silently = False
+                    )
+                    email_status = f"mail delivered successfullly to {staff_name}"
+                except Exception as e:
+                    print(f"mail couldnt sent : ,{str(e)}")
+                    email_status  = f"not delivered ,{str(e)}" 
+
             return Response(
-                {"message" : "User create successfully",
+                {
+                'message' :'user created successfully'
                 },
                 status = status.HTTP_201_CREATED
-                )
-
+            )
         return Response(
-            serializer.errors,
-            status = status.HTTP_400_BAD_REQUEST 
+          serializer.errors, 
+          status = status.HTTP_400_BAD_REQUEST
         )
+
+
+
+
     
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -61,6 +106,7 @@ class LoginAPIView(APIView):
 
         access = data.get("access")
         refresh = data.get('refresh')
+
 
         response = Response(
             {
@@ -107,58 +153,66 @@ class RefreshTokenAPIView(APIView):
 class LogoutView(APIView):
 
     def post(self, request):
+        refresh_token = request.COOKIES.get('refresh_token')
 
-        refresh_token = request.COOKIES.get("refresh_token")
-
-        if refresh_token:
+        if refreshToken:
             try:
-                token = RefreshToken(refresh_token)
+                token = RefreshToken(refreshToken)
                 token.blacklist()
             except Exception:
                 pass
-            response = Response({"message": "Logged out"}) 
-        clear_auth_cookies(response)
+            response = Response({'message': "Logged Out"})
 
+        clear_auth_cookies(response)
         return response
+        
 
 class  ProfileViewAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        
         data = {
-            'id': user.id,
-            'name': user.name,
+            'id' : user.id,
+            'name':user.name,
+            'phone':user.phone,
             'email': user.email,
-            'phone': user.phone,
-            'role': user.role,
-            'status': user.get_is_active_display(),
-            'community': {
-                'id': user.community.id,
-                'name': user.community.name,
+            'status':user.get_is_active_display(),
+            'role':user.role,
+            'community':{
+                'id' :user.community.id,
+                'name':user.community.name,
                 'address': user.community.address
-            } if user.community else None
+            }if user.community else None
+
         }
 
-        if user.role == 'RESIDENT':
-            profile = getattr(user, 'resident_profile', None)
-            if profile:
-                data['block'] = {'id': profile.block.id, 'name': profile.block.name} if profile.block else None
-                data['flat'] = {'id': profile.flat.id, 'name': profile.flat.name} if profile.flat else None
+        if user.role =='RESIDENT':
+            profile  = getattr(user,'resident_profile',None)
+            mybills = Bill.objects.filter(flat = profile.flat)
+            period = date.today() - relativedelta(months = 2)
 
-        elif user.role == 'STAFF':
-            profile = getattr(user, 'staff_profile', None)
+            paid_bills = mybills.filter(status = 'PAID',created_at__date__gte= period)
+            paid_amount = paid_bills.aggregate(Sum('total_amount'))['total_amount__sum'] or 0.0
             if profile:
-                data['designation'] = profile.designation
-                data['monthly_salary'] = profile.monthly_salary
+                data['block'] = {'id':'profile.block.id', 'name':'profile.block.name'} if profile.block else None
+                data['flat']  = {'id':'profile.flat.id', 'name': 'profile.flat.name'} if profile.flat else None
+                data['paid_amount'] = paid_amount
 
+
+
+        elif user.role == 'STAFF' :
+            profile = getattr(user,'staff_profile',None)
+            if profile:
+                data['designation'] = {'designation' : 'profile.designation'} if profile.designation else None
+                data['monthly_salary '] = {'monthly_salary': 'profile.monthly_salary'} if profile.monthly_salary else None
+
+            
         return Response(data)
 
         
     def patch(self, request):
         serializer = ProfileUpdateSerializer(
-            request.user, 
             data=request.data, 
             partial=True 
         )
@@ -176,47 +230,45 @@ class DeleteView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def delete(self, request, user_id):
-        user = get_object_or_404(User, id=user_id ,community = request.user.community)
 
+        user = get_object_or_404(User,id = user_id,community = request.user.community)
         if not user.is_active:
-            return Response({"error": "User is already inactive"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        if user.role == "SUPER_ADMIN":
-            return Response({"error": "Cannot delete super admin"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({f"user {user.name} is not active.... "},status = status.HTTP_400_BAD_REQUEST)
+        if not user.community.is_active:
+            return Response({f"user community {user.community} is not active.... "},status = status.HTTP_400_BAD_REQUEST)
+        
+        if user.role =='SUPER_ADMIN':
+            return Response({f"cannot delete superadmin"},HTTP_403_FORBIDDEN)
 
-        if user.role == "STAFF":
-            staff_profile = getattr(user, 'staff_profile', None)
-            if staff_profile:
-                staff_profile.status = "INACTIVE"
-                staff_profile.save()
-
-        elif user.role == "RESIDENT":
-            resident_profile = getattr(user, 'resident_profile', None)
+        if user.role == 'RESIDENT':
+            resident_profile = getattr(user,'resident_profile',None)
             if resident_profile:
-                resident_profile.status = "INACTIVE"
+                resident_profile.status = 'INACTIVE'
                 resident_profile.save()
 
                 if resident_profile.flat:
-                    flat = resident_profile.flat
-                    flat.occupied = False
-                    flat.resident = None
-                    flat.save()
-
- 
-
+                    resident_profile.flat.occupied = False
+                    resident_profile.flat.resident = None
+                    resident_profile.flat.save()
+            
+        elif user.role == "STAFF":
+            staff_profile = getattr(user,'staff_profile',None)
+            if staff_profile:
+                staff_profile.status = 'INACTIVE'
+                staff_profile.save()
+            
         user.is_active = False
-        user.save()
+        user.save()    
 
-        return Response(
-            {"message": f"User {user.name} and their {user.role} profile have been deactivated."},
-            status=status.HTTP_200_OK
-        )
+        return Response({f"user{user.name} is deactivated successfully"},status = status.HTTP_200_OK)
+
+
     
 class ReactivateUserView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def patch(self, request, user_id):
-        user = get_object_or_404(User, id=user_id)
+        user = get_object_or_404(User, id = user_id)
 
         if user.is_active:
             return Response({"message": "User is already active"}, status=status.HTTP_400_BAD_REQUEST)

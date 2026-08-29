@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Meeting,MeetingAttendance
 from django.contrib.auth import get_user_model
-
+from django.utils import timezone
     
 User = get_user_model()
 
@@ -24,7 +24,7 @@ class MeetingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Meeting
         fields = '__all__'
-        read_only_fields = ['community', 'organizer']
+        read_only_fields = ['community', 'organizer','created_at']
 
     def get_attendees(self, obj):
         attendance_records = MeetingAttendance.objects.filter(meeting=obj).select_related('user')
@@ -39,3 +39,4 @@ class MeetingSerializer(serializers.ModelSerializer):
                     'duration_minutes': record.duration_minutes
                 })
         return attendees_list
+    

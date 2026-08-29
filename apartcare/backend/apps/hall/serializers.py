@@ -14,7 +14,8 @@ class CommunityHallSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CommunityHall
-        fields = ['id', 'name', 'description', 'capacity', 'rent_per_seat', 'images', 'is_active']
+        fields = ['id', 'name', 'description', 'capacity', 'rent_per_seat', 'ac_room' ,'images','is_active']
+        
 
 class HallBookingSerializer(serializers.ModelSerializer):
 
@@ -27,7 +28,7 @@ class HallBookingSerializer(serializers.ModelSerializer):
         model = HallBooking
         fields = [
             'id', 'hall', 'hall_name', 'resident_name', 'flat_name', 'purpose', 'booking_date', 'start_time', 
-            'end_time', 'status', 'admin_remarks', 'created_at', 'attendees', 'total_amount', 'is_paid'
+            'end_time','ac_room', 'status', 'admin_remarks', 'created_at', 'attendees', 'total_amount', 'is_paid'
         ]
         read_only_fields = ['status', 'admin_remarks', 'created_at']
 
@@ -45,7 +46,9 @@ class HallBookingSerializer(serializers.ModelSerializer):
         start_time = data.get('start_time')
         end_time = data.get('end_time')
         hall = data.get('hall') 
-
+        if data.get('attendees') and hall and data['attendees'] > hall.capacity:
+            raise serializers.ValidationError({"attendees": "Number of attendees exceeds hall capacity."})
+            
         if booking_date and booking_date < date.today():
             raise serializers.ValidationError({"booking_date": "You cannot book for a past date."})
             

@@ -1,18 +1,19 @@
 import re
+import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
-from .models import Meeting ,MeetingAttendance
-from .serializers import MeetingSerializer
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.contrib.auth import get_user_model
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from django.contrib.auth import get_user_model
-from apps.notification.models import Notification 
-from rest_framework.parsers import MultiPartParser
-import csv
-from apps.accounts.permissions import IsAdmin
+from rest_framework.parsers import MultiPartParser, FormParser
+from .models import Meeting
+from .serializers import MeetingSerializer
+from apps.notification.models import Notification  
 
 User = get_user_model()
 
@@ -21,9 +22,9 @@ class MeetingAPIView(APIView):
 
     def get(self, request):
         user = request.user
-        user_community = getattr(user, 'managed_community', None) if user.role == 'ADMIN' else user.community
+        user_community = getattr(user, 'managed_community', None) if getattr(user, 'role', '') == 'ADMIN' else getattr(user, 'community', None)
         if not user_community:
-            return Response({"error": "No community assigned."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response([], status=status.HTTP_200_OK)
         
         queryset = Meeting.objects.filter(community=user_community).order_by('meeting_time')
         
@@ -35,47 +36,65 @@ class MeetingAPIView(APIView):
         serializer = MeetingSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
     def post(self, request):
         user = request.user
         if getattr(user, 'role', '') != 'ADMIN':
             return Response({"error": "Only admins can schedule meetings."}, status=status.HTTP_403_FORBIDDEN)
 
         admin_community = getattr(user, 'managed_community', None)
-        
-        serializer = MeetingSerializer(data=request.data)
+        if not admin_community:
+            return Response({"error": "Admin is not assigned to a managed community."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data.copy()
+        raw_meeting_time = data.get('meeting_time')
+
+        if raw_meeting_time:
+            try:
+                parsed_dt = parse_datetime(raw_meeting_time)
+                if parsed_dt and timezone.is_naive(parsed_dt):
+                    data['meeting_time'] = timezone.make_aware(parsed_dt, timezone.get_current_timezone())
+            except Exception as e:
+                print("⚠️ Meeting time parse warning:", e)
+
+        serializer = MeetingSerializer(data=data)
         if serializer.is_valid():
             meeting = serializer.save(community=admin_community, organizer=user)
+
+            formatted_time = "Scheduled Date"
+            if meeting.meeting_time:
+                local_dt = timezone.localtime(meeting.meeting_time)
+                formatted_time = local_dt.strftime("%b %d at %I:%M %p")
+
+            notif_message = f"New Meeting Scheduled: {meeting.title} on {formatted_time}"
+
             target_users = User.objects.filter(community=admin_community)
             if meeting.target_audience == 'RESIDENT':
                 target_users = target_users.filter(role='RESIDENT')
             elif meeting.target_audience == 'STAFF':
                 target_users = target_users.filter(role='STAFF')
-            else:
-                target_users = target_users.filter(role__in=['RESIDENT', 'STAFF'])
 
             channel_layer = get_channel_layer()
-            formatted_time = meeting.meeting_time.strftime("%b %d at %I:%M %p")
-            notif_message = f"New Meeting Scheduled: {meeting.title} on {formatted_time}"
-
             for target_user in target_users:
                 Notification.objects.create(
                     user=target_user,
-                    message=notif_message,
+                    notification_type='MEETING',  
+                    title="New Meeting Scheduled 📅",
+                    message=notif_message
                 )
-
-                async_to_sync(channel_layer.group_send)(
-                    f"notifications_{target_user.id}", 
-                    {
-                        "type": "send_notification", 
-                        "message": notif_message,
-                        "notification_type": "MEETING" 
-                    }
-                )
+                if channel_layer:
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_admin_community_{target_user.id}", 
+                        {
+                            "type": "send_notification", 
+                            "title": "New Meeting ⚠️",
+                            "message": notif_message,
+                        }
+                    )
 
             return Response({"message": "Meeting scheduled successfully!"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        print("❌ Serializer Validation Errors:", serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UploadAttendanceCSVAPIView(APIView):

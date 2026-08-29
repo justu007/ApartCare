@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../../api/axios'; 
 
@@ -101,86 +103,75 @@ const AdminMeetings = () => {
         }
     };
 
+
     const now = new Date();
     const upcomingMeetings = meetings.filter(m => new Date(m.meeting_time) >= now);
     const pastMeetings = meetings.filter(m => new Date(m.meeting_time) < now).reverse();
 
     return (
-        <div className="max-w-7xl p-6 mx-auto mt-8 relative">
+        /* 🎯 ULTRA-WIDESCREEN FLUID MATRIX CANVAS */
+        <div className="w-full max-w-full px-6 lg:px-12 mx-auto space-y-10 animate-fade-in pb-12">
             
-            {/* 🎯 UPDATED: Center-Screen Status Notification Window */}
+            {/* Status Feedback Popup Modal System */}
             {alertWindow.show && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
-                    <div className={`max-w-md w-full p-6 rounded-2xl border shadow-2xl bg-slate-900 flex flex-col items-center text-center scale-up ${
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className={`max-w-md w-full p-8 rounded-3xl border shadow-2xl bg-slate-900 flex flex-col items-center text-center ${
                         alertWindow.type === 'success' 
                         ? 'border-emerald-500/30 text-emerald-400 shadow-emerald-950/40' 
                         : 'border-rose-500/30 text-rose-400 shadow-rose-950/40'
                     }`}>
-                        
-                        {/* Status Graphic/Icon */}
                         <div className={`p-3 rounded-full mb-4 ${alertWindow.type === 'success' ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
                             {alertWindow.type === 'success' ? (
-                                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path>
-                                </svg>
+                                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
                             ) : (
-                                <svg className="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                                </svg>
+                                <svg className="w-8 h-8 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             )}
                         </div>
-
-                        <h3 className="font-black text-lg text-slate-100">
-                            {alertWindow.type === 'success' ? 'Operation Successful' : 'Action Failed'}
-                        </h3>
-                        
-                        <p className="text-sm text-slate-400 mt-2 max-w-sm">
-                            {alertWindow.message}
-                        </p>
-
-                        <button 
-                            onClick={() => setAlertWindow({ show: false, message: '', type: 'success' })}
-                            className={`mt-5 px-5 py-2 rounded-xl text-xs font-bold text-slate-900 transition-colors ${
-                                alertWindow.type === 'success' 
-                                ? 'bg-emerald-400 hover:bg-emerald-300' 
-                                : 'bg-rose-400 hover:bg-rose-300'
-                            }`}
-                        >
-                            Dismiss Window
-                        </button>
+                        <h3 className="font-black text-xl text-slate-100">{alertWindow.type === 'success' ? 'Operation Completed' : 'Process Exception'}</h3>
+                        <p className="text-sm text-slate-400 mt-2 max-w-sm leading-relaxed">{alertWindow.message}</p>
+                        <button onClick={() => setAlertWindow({ show: false, message: '', type: 'success' })} className={`mt-6 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-950 ${alertWindow.type === 'success' ? 'bg-emerald-400 hover:bg-emerald-300' : 'bg-rose-400 hover:bg-rose-300'}`}>Dismiss Window</button>
                     </div>
                 </div>
             )}
 
-            <div className="flex justify-between items-center mb-8">
+            {/* Top Operational Title Bar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-6">
                 <div>
-                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                        Community Meetings
+                    <h1 className="text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 tracking-tight">
+                        Community Video Briefings
                     </h1>
-                    <p className="mt-2 text-slate-400">Schedule video calls and maintain meeting history.</p>
+                    <p className="mt-1 text-xs text-slate-400 font-mono tracking-wide">Schedule digital operational rooms and manage attendance logs.</p>
                 </div>
                 <button 
                     onClick={() => setShowModal(true)}
-                    className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-transform hover:-translate-y-1"
+                    className="px-6 py-3 font-black tracking-widest text-xs uppercase shadow-lg rounded-xl text-slate-950 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 transform hover:-translate-y-0.5 transition-all shrink-0"
                 >
-                    + Schedule Meeting
+                    + Schedule New Session
                 </button>
             </div>
 
             {loading ? (
-                <div className="text-center text-slate-500 py-10">Loading meetings...</div>
+                <div className="min-h-[40vh] flex items-center justify-center text-xs font-black font-mono text-slate-500 animate-pulse">SYNCHRONIZING DIGITAL BRIEFING INFRASTRUCTURE...</div>
             ) : (
                 <div className="space-y-12">
                     
-                    {/* --- UPCOMING MEETINGS --- */}
-                    <section>
-                        <h2 className="text-xl font-bold text-slate-200 mb-4 border-b border-slate-800 pb-2">Upcoming Meetings</h2>
+                    {/* --- UPCOMING ROOMS SECTION --- */}
+                    <section className="space-y-6">
+                        <div className="flex items-center gap-3 border-b border-slate-800/80 pb-2.5">
+                            <h2 className="text-xl font-black text-slate-200 tracking-wide">Active Scheduled Sessions</h2>
+                            {upcomingMeetings.length > 0 && (
+                                <span className="px-2.5 py-0.5 text-[10px] font-black font-mono tracking-widest bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full uppercase animate-pulse">
+                                    {upcomingMeetings.length} Open
+                                </span>
+                            )}
+                        </div>
                         {upcomingMeetings.length === 0 ? (
-                            <div className="p-8 text-center border border-dashed border-slate-700 rounded-2xl text-slate-500">
-                                No upcoming meetings scheduled.
+                            <div className="p-12 text-center border border-dashed border-slate-800 bg-slate-900/10 rounded-2xl text-slate-500 font-mono text-xs italic">
+                                No active conference channels scheduled on current telemetry timeline.
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            /* Widescreen Card Grid layout */
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                 {upcomingMeetings.map(meeting => (
                                     <MeetingCard key={meeting.id} meeting={meeting} isUpcoming={true} />
                                 ))}
@@ -188,84 +179,92 @@ const AdminMeetings = () => {
                         )}
                     </section>
 
-                    {/* --- MEETING HISTORY --- */}
-                    <section>
-                        <h2 className="text-xl font-bold text-slate-200 mb-4 border-b border-slate-800 pb-2">Meeting History & Attendance</h2>
+                    {/* --- HISTORY & ACCORDION ATTENDANCE TRACKER SECTION --- */}
+                    <section className="space-y-4">
+                        <h2 className="text-xl font-black text-slate-400 border-b border-slate-800 pb-2.5">Past Records Archive & Attendance Logs</h2>
                         {pastMeetings.length === 0 ? (
-                            <div className="p-8 text-center border border-dashed border-slate-700 rounded-2xl text-slate-500">
-                                No past meetings found.
+                            <div className="p-12 text-center border border-dashed border-slate-800 bg-slate-900/10 rounded-2xl text-slate-500 font-mono text-xs italic">
+                                No historical meeting timelines found inside registry blocks.
                             </div>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-4 w-full">
                                 {pastMeetings.map((meeting) => {
-                                    const dateObj = new Date(meeting.meeting_time);
-                                    const dateStr = dateObj.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-                                    
+                                    const rawTime = meeting.meeting_time;
+                                    const isoString = (typeof rawTime === 'string' && !rawTime.endsWith('Z') && !rawTime.includes('+')) 
+                                        ? `${rawTime}Z` 
+                                        : rawTime;
+
+                                    const dateObj = new Date(isoString);
+                                    const dateStr = dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                                    const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                        
                                     return (
-                                        <div key={meeting.id} className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                                        <div key={meeting.id} className="bg-slate-900/30 border border-slate-800 rounded-2xl overflow-hidden shadow-xl hover:border-slate-800 transition-all group">
                                             
-                                            {/* Accordion Header */}
+                                            {/* Accordion Master Row Trigger Line */}
                                             <div 
-                                                className="p-5 flex flex-wrap md:flex-nowrap items-center justify-between cursor-pointer hover:bg-slate-700/50 transition-colors"
+                                                className="p-5 flex flex-wrap md:flex-nowrap items-center justify-between cursor-pointer bg-slate-900/20 hover:bg-slate-800/20 transition-colors gap-4"
                                                 onClick={() => toggleAccordion(meeting.id)}
                                             >
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-slate-200">{meeting.title}</h3>
-                                                    <p className="text-sm text-slate-400 mt-1">{dateStr}</p>
+                                                <div className="min-w-0 flex-1">
+                                                    <h3 className="text-base font-black text-slate-200 block truncate group-hover:text-cyan-400 transition-colors">{meeting.title}</h3>
+                                                    <p className="text-xs text-slate-500 font-mono mt-1">📅 {dateStr} — ⏱️ {timeStr}</p>
                                                 </div>
                                                 
-                                                <div className="flex items-center gap-4 mt-3 md:mt-0">
+                                                <div className="flex items-center gap-6 shrink-0">
                                                     <div className="text-right">
-                                                        <p className="text-2xl font-black text-cyan-400">{meeting.attendees?.length || 0}</p>
-                                                        <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Attendees</p>
+                                                        <p className="text-2xl font-black text-cyan-400 font-mono">{meeting.attendees?.length || 0}</p>
+                                                        <p className="text-[9px] uppercase tracking-widest text-slate-500 font-black">Logged Attendees</p>
                                                     </div>
-                                                    <svg className={`w-6 h-6 text-slate-400 transition-transform duration-300 ${expandedMeetingId === meeting.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                                    <svg className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${expandedMeetingId === meeting.id ? 'rotate-180 text-cyan-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path>
                                                     </svg>
                                                 </div>
                                             </div>
 
-                                            {/* Accordion Expanded Details */}
+                                            {/* Expanded inner container data grid block */}
                                             {expandedMeetingId === meeting.id && (
-                                                <div className="p-5 border-t border-slate-700 bg-slate-800/50">
-                                                    <div className="flex justify-between items-center mb-4">
-                                                        <h4 className="font-bold text-slate-300">Joined Residents List</h4>
-                                                        
+                                                <div className="p-6 border-t border-slate-800/80 bg-slate-950/20 space-y-6 animate-fade-in">
+                                                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-800 pb-3">
                                                         <div>
+                                                            <h4 className="font-black text-xs uppercase tracking-widest text-slate-400">Resident Presence Database</h4>
+                                                            <p className="text-[11px] font-mono text-slate-500 mt-0.5">Upload a raw Google Meet participation CSV sheet to map tracking durations automatically.</p>
+                                                        </div>
+                                                        
+                                                        <div className="shrink-0 relative">
                                                             <input 
-                                                                type="file" 
-                                                                accept=".csv" 
-                                                                className="hidden" 
+                                                                type="file" accept=".csv" className="hidden" 
                                                                 id={`csv-upload-${meeting.id}`}
                                                                 onChange={(e) => handleFileChange(e, meeting.id)}
                                                                 ref={fileInputRef}
                                                             />
                                                             <label 
                                                                 htmlFor={`csv-upload-${meeting.id}`}
-                                                                className={`px-4 py-2 text-sm font-bold text-white rounded cursor-pointer transition-colors shadow-lg ${uploadingId === meeting.id ? 'bg-slate-600' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+                                                                className={`px-4 py-2 text-xs font-black tracking-widest uppercase rounded-xl cursor-pointer transition-all border flex items-center gap-2 shadow-lg ${uploadingId === meeting.id ? 'bg-slate-800 border-slate-700 text-slate-500' : 'bg-slate-900 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/5'}`}
                                                             >
-                                                                {uploadingId === meeting.id ? 'Uploading...' : '📁 Upload CSV'}
+                                                                {uploadingId === meeting.id ? 'Compiling CSV Matrix...' : '📁 Ingest Meet CSV Log'}
                                                             </label>
                                                         </div>
                                                     </div>
 
+                                                    {/* Nested Attendance Grid Map */}
                                                     {meeting.attendees && meeting.attendees.length > 0 ? (
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                                                             {meeting.attendees.map((user, idx) => (
-                                                                <div key={idx} className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                                                                    <div className="w-8 h-8 rounded-full bg-cyan-900/50 flex items-center justify-center text-cyan-400 font-bold border border-cyan-500/30">
+                                                                <div key={idx} className="flex items-center gap-3.5 p-3 bg-slate-950/30 rounded-xl border border-slate-800/60">
+                                                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-950 to-slate-900 flex items-center justify-center text-cyan-400 text-sm font-black border border-cyan-500/10 shrink-0">
                                                                         {user.name ? user.name.charAt(0).toUpperCase() : '?'}
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="text-sm font-bold text-slate-200">{user.name}</p>
-                                                                        {user.duration_minutes !== undefined && <p className="text-xs text-slate-400">Duration: {user.duration_minutes} min</p>}
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-xs font-black text-slate-200 truncate block">{user.name}</p>
+                                                                        {user.duration_minutes !== undefined && <p className="text-[10px] font-mono text-emerald-400 font-bold mt-0.5">Duration: {user.duration_minutes} mins</p>}
                                                                     </div>
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <div className="text-center py-6 text-slate-500 text-sm italic bg-slate-900/30 rounded-lg">
-                                                            No attendance data yet. Upload the Google Meet CSV to populate this list!
+                                                        <div className="text-center py-8 text-xs text-slate-600 font-mono italic bg-slate-950/20 rounded-xl border border-dashed border-slate-800">
+                                                            No verified tracking data bound to this instance. Parse a Google Meet spreadsheet to sync logs.
                                                         </div>
                                                     )}
                                                 </div>
@@ -279,52 +278,56 @@ const AdminMeetings = () => {
                 </div>
             )}
 
-            {/* --- SCHEDULE MODAL --- */}
+            {/* --- CORE PARAMETER INPUT CREATION FORM OVERLAY MODAL --- */}
             {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-lg p-8 border shadow-2xl bg-slate-900 border-slate-700 rounded-2xl">
-                        <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                            <h2 className="text-2xl font-bold text-slate-100">Schedule New Meeting</h2>
-                            <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-rose-400 text-2xl">&times;</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+                    <div className="w-full max-w-xl border bg-slate-900 border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+                        <div className="px-8 py-5 border-b border-slate-800 bg-slate-950/20 flex justify-between items-center">
+                            <h2 className="text-base font-black uppercase tracking-widest text-slate-200">Initialize Briefing Room</h2>
+                            <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-rose-400 font-bold text-xl">&times;</button>
                         </div>
 
-                        {formStatus.message && <div className="p-3 mb-4 text-sm rounded text-emerald-300 bg-emerald-500/10 border border-emerald-500/20">{formStatus.message}</div>}
-                        {formStatus.error && <div className="p-3 mb-4 text-sm rounded text-rose-300 bg-rose-500/10 border border-rose-500/20">{formStatus.error}</div>}
+                        <form onSubmit={handleSubmit} className="p-8 space-y-4 text-xs font-bold">
+                            {formStatus.message && <div className="p-3 text-xs border font-mono rounded-xl text-emerald-400 bg-emerald-500/10 border-emerald-500/20">{formStatus.message}</div>}
+                            {formStatus.error && <div className="p-3 text-xs border font-mono rounded-xl text-rose-400 bg-rose-500/10 border-rose-500/20">{formStatus.error}</div>}
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Meeting Title</label>
-                                <input required type="text" name="title" value={formData.title} onChange={handleInputChange} className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-cyan-500 outline-none" placeholder="e.g. Monthly Association Meeting" />
+                                <label className="block text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">Session / Briefing Title</label>
+                                <input required type="text" name="title" value={formData.title} onChange={handleInputChange} className="w-full p-3 border outline-none bg-slate-950 border-slate-800 text-slate-200 rounded-xl focus:border-cyan-500" placeholder="e.g. Annual Budget Allocation Voting" />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Date & Time</label>
-                                    <input required type="datetime-local" name="meeting_time" value={formData.meeting_time} onChange={handleInputChange} className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-cyan-500 outline-none" />
+                                    <label className="block text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">Execution Date & Time</label>
+                                    <input required type="datetime-local" name="meeting_time" value={formData.meeting_time} onChange={handleInputChange} className="w-full p-3 font-mono border outline-none bg-slate-950 border-slate-800 text-slate-200 rounded-xl focus:border-cyan-500 cursor-pointer [color-scheme:dark]" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Target Audience</label>
-                                    <select name="target_audience" value={formData.target_audience} onChange={handleInputChange} className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-cyan-500 outline-none">
-                                        <option value="ALL">Everyone</option>
-                                        <option value="RESIDENT">Residents Only</option>
-                                        <option value="STAFF">Staff Only</option>
+                                    <label className="block text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">Target Audience Scope</label>
+                                    <select name="target_audience" value={formData.target_audience} onChange={handleInputChange} className="w-full p-3 border outline-none bg-slate-950 border-slate-800 text-slate-200 rounded-xl cursor-pointer focus:border-cyan-500">
+                                        <option value="ALL">Everyone (Global Inhabitants)</option>
+                                        <option value="RESIDENT">Residents Track Only</option>
+                                        <option value="STAFF">Maintenance Staff Networks</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Video Call Link (Zoom/Meet)</label>
-                                <input required type="url" name="meeting_link" value={formData.meeting_link} onChange={handleInputChange} className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-cyan-500 outline-none" placeholder="https://meet.google.com/xyz-abc-def" />
+                                <label className="block text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">Video Conferencing Proxy Endpoint URL</label>
+                                <input required type="url" name="meeting_link" value={formData.meeting_link} onChange={handleInputChange} className="w-full p-3 font-mono border outline-none bg-slate-950 border-slate-800 text-slate-200 rounded-xl focus:border-cyan-500" placeholder="https://meet.google.com/xyz-abc-def" />
                             </div>
 
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Description (Optional)</label>
-                                <textarea name="description" value={formData.description} onChange={handleInputChange} rows="3" className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-cyan-500 outline-none" placeholder="Agenda or notes..."></textarea>
+                                <label className="block text-[10px] font-black tracking-widest text-slate-500 uppercase mb-1">Agenda / Tactical Briefing</label>
+                                <textarea name="description" value={formData.description} onChange={handleInputChange} rows="3" className="w-full p-3 font-sans font-normal text-sm border outline-none bg-slate-950 border-slate-800 text-slate-200 rounded-xl focus:border-cyan-500 resize-none leading-relaxed" placeholder="Map out conference checklist data here..." />
                             </div>
 
-                            <button type="submit" disabled={formStatus.loading} className="w-full py-3 mt-4 font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg disabled:opacity-50 transition-colors">
-                                {formStatus.loading ? 'Scheduling...' : 'Schedule Meeting'}
-                            </button>
+                            <div className="flex gap-4 pt-4 mt-6 border-t border-slate-800">
+                                <button type="button" onClick={() => setShowModal(false)} className="w-1/2 py-3 border text-slate-400 border-slate-800 bg-slate-950/40 rounded-xl">Cancel Request</button>
+                                <button type="submit" disabled={formStatus.loading} className="w-1/2 py-3 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 uppercase tracking-wider rounded-xl shadow-lg shadow-cyan-950/40">
+                                    {formStatus.loading ? 'Deploying...' : 'Deploy Room Link'}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -334,50 +337,72 @@ const AdminMeetings = () => {
 };
 
 const MeetingCard = ({ meeting, isUpcoming }) => {
-    const dateObj = new Date(meeting.meeting_time);
-    const dateStr = dateObj.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    const timeStr = dateObj.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    const rawTime = meeting?.meeting_time;
+    const dateObj = rawTime ? new Date(rawTime) : new Date();
+
+    const dateStr = dateObj.toLocaleDateString('en-IN', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+
+    const timeStr = dateObj.toLocaleTimeString('en-IN', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+    });
 
     const audienceColors = {
-        'ALL': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-        'RESIDENT': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-        'STAFF': 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+        'ALL': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+        'RESIDENT': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+        'STAFF': 'bg-amber-500/10 text-amber-400 border-amber-500/20'
     };
 
     return (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 hover:border-slate-600 transition-colors flex flex-col h-full">
-            <div className="flex justify-between items-start mb-3">
-                <div className="flex flex-col">
-                    <span className="text-sm font-bold text-cyan-400">{dateStr}</span>
-                    <span className="text-xs text-slate-400">{timeStr}</span>
+        <div className="bg-slate-900/40 border border-slate-800/90 rounded-2xl p-6 hover:border-cyan-500/30 transition-all flex flex-col justify-between h-full shadow-2xl relative group overflow-hidden">
+            <div className="absolute top-0 left-0 h-full w-0.5 bg-cyan-500/20 group-hover:bg-cyan-500 transition-colors"></div>
+            <div>
+                <div className="flex justify-between items-start mb-4 pb-3 border-b border-slate-800/60 w-full">
+                    <div className="flex flex-col">
+                        <span className="text-base font-black text-cyan-400 font-mono tracking-tight">{dateStr}</span>
+                        <span className="text-xs text-slate-400 font-mono mt-0.5">{timeStr}</span>
+                    </div>
+                    <span className={`text-[9px] font-black tracking-widest px-2.5 py-0.5 rounded border uppercase font-mono ${audienceColors[meeting?.target_audience] || 'border-slate-800 text-slate-400'}`}>
+                        {meeting?.target_audience || 'ALL'}
+                    </span>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-1 rounded border ${audienceColors[meeting.target_audience]}`}>
-                    {meeting.target_audience}
-                </span>
+                
+                <h3 className="text-lg lg:text-xl font-black text-slate-100 group-hover:text-cyan-400 transition-colors tracking-wide mb-2 line-clamp-1">{meeting?.title}</h3>
+                <p className="text-xs text-slate-400 leading-relaxed font-sans line-clamp-3 mb-6 whitespace-pre-wrap font-medium">
+                    {meeting?.description || "No agenda specification sheet provided for this digital room line."}
+                </p>
             </div>
             
-            <h3 className="text-lg font-bold text-slate-200 mb-1">{meeting.title}</h3>
-            <p className="text-sm text-slate-400 flex-1 line-clamp-2">{meeting.description || "No agenda provided."}</p>
-            
-            <div className="mt-4 pt-4 border-t border-slate-700 flex justify-between items-center">
-                <div className="text-xs text-slate-500">
-                    Host: <span className="text-slate-300">{meeting.organizer_name}</span>
+            <div className="mt-auto pt-4 border-t border-slate-800/60 flex justify-between items-center text-xs">
+                <div className="text-slate-500 font-sans">
+                    Host Organizer: <span className="text-slate-300 font-bold">{meeting?.organizer_name || 'Administrator'}</span>
                 </div>
+                
                 <a 
-                    href={meeting.meeting_link} 
+                    href={meeting?.meeting_link || '#'} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+                    className={`px-4 py-2 rounded-xl text-xs font-black tracking-wider uppercase transition-all flex items-center gap-1.5 transform hover:-translate-y-0.5 ${
                         isUpcoming 
-                        ? 'bg-green-600 hover:bg-green-500 text-white' 
-                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                        ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold shadow-lg shadow-green-950/40' 
+                        : 'bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium'
                     }`}
                 >
-                    {isUpcoming ? 'Join Call' : 'View Link'}
+                    {isUpcoming ? (
+                        <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                            Join Call Room
+                        </>
+                    ) : 'View Link'}
                 </a>
             </div>
         </div>
     );
 };
-
 export default AdminMeetings;

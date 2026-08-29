@@ -7,10 +7,15 @@ from datetime import timedelta
 
 load_dotenv()
 
+
+
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 if not SECRET_KEY:
     raise Exception("SECRET_KEY not found in environment variables")
+
+
 
 
 DEBUG =os.getenv('DEBUG', 'False').lower() == 'true'
@@ -167,7 +172,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata' 
 
 USE_I18N = True
 

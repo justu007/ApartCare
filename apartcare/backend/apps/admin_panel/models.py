@@ -2,13 +2,13 @@ from django.db import models
 from apps.accounts.models import User
 from apps.apartment.models import Flat, Block
 
-# Create your models here.
 class AdminResident_Profile(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE,related_name = 'resident_profile')
 
     flat = models.ForeignKey(Flat,on_delete= models.SET_NULL,null=True,blank=True)
 
     block = models.ForeignKey(Block,on_delete=models.SET_NULL,null= True,blank=True)
+    paid_amount  = models.CharField(null=True, blank = True)
 
     created_date = models.DateField(null=True, blank= True)
 

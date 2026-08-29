@@ -6,7 +6,8 @@ from django.shortcuts import get_object_or_404
 from .models import ChatMessage
 from .serializers import ChatMessageSerializer
 from apps.issue.models import Issue
-
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class ChatHistoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -21,12 +22,14 @@ class ChatHistoryAPIView(APIView):
 
         messages = ChatMessage.objects.filter(
             community=user_community, 
-            issue__isnull=True
+            issue__isnull=True,
+            is_support = False
         ).order_by('-timestamp')[:50]
+
         
         chat_data = []
         
-        for msg in reversed(messages):
+        for msg in reversed(list(messages)):
             chat_data.append({
                 "message": msg.message,
                 "sender_name": getattr(msg.sender, 'name', msg.sender.username),
@@ -37,6 +40,26 @@ class ChatHistoryAPIView(APIView):
         return Response(chat_data, status=status.HTTP_200_OK)
 
 
+# class IssueChatHistoryAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request, issue_id):
+#         user = request.user
+#         issue = get_object_or_404(Issue, id=issue_id)
+
+#         is_admin = (user.role == 'ADMIN' and getattr(user, 'managed_community', None) == issue.community)
+#         is_creator = (user.role == 'RESIDENT' and issue.creator == user)
+#         is_assigned_staff = (user.role == 'STAFF' and issue.assigned_staff == user)
+
+#         if not (is_admin or is_creator or is_assigned_staff):
+#             return Response({"error": "You do not have permission to view this chat."}, status=status.HTTP_403_FORBIDDEN)
+
+#         messages = ChatMessage.objects.filter(issue=issue).order_by('-timestamp')[:50]
+#         messages = reversed(messages) 
+        
+#         serializer = ChatMessageSerializer(messages, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+    
 class IssueChatHistoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -44,7 +67,9 @@ class IssueChatHistoryAPIView(APIView):
         user = request.user
         issue = get_object_or_404(Issue, id=issue_id)
 
-        is_admin = (user.role == 'ADMIN' and getattr(user, 'managed_community', None) == issue.community)
+        issue_community = getattr(issue.creator, 'community', None) if hasattr(issue, 'creator') else None
+
+        is_admin = (user.role == 'ADMIN' and getattr(user, 'managed_community', None) == issue_community)
         is_creator = (user.role == 'RESIDENT' and issue.creator == user)
         is_assigned_staff = (user.role == 'STAFF' and issue.assigned_staff == user)
 
@@ -52,8 +77,9 @@ class IssueChatHistoryAPIView(APIView):
             return Response({"error": "You do not have permission to view this chat."}, status=status.HTTP_403_FORBIDDEN)
 
         messages = ChatMessage.objects.filter(issue=issue).order_by('-timestamp')[:50]
-        messages = reversed(messages) 
+        ordered_messages = list(reversed(messages)) 
+
+
         
-        serializer = ChatMessageSerializer(messages, many=True)
+        serializer = ChatMessageSerializer(ordered_messages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    

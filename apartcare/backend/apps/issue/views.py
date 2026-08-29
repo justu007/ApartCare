@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from apps.notification.models import Notification
 from django.contrib.auth import get_user_model
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
@@ -20,10 +22,9 @@ class IssueViewSet(viewsets.ModelViewSet):
         
         user_community = getattr(user, 'managed_community', None) if user.role == 'ADMIN' else getattr(user, 'community', None)
         
-        print(f"User: {user.email}, Role: {user.role}, Community: {user_community.name if user_community else 'None'}")
         
         if not user_community:
-            raise ValidationError({"detail": "No valid community configuration mapped to this profile node."})
+            raise ValidationError({"detail": "No valid community configuration mapped to this User."})
 
         if user.role == 'ADMIN':
             return Issue.objects.filter(creator__community=user_community) 
@@ -45,32 +46,55 @@ class IssueViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         
         issue = serializer.save(creator=request.user)
-        
+
         Notification.objects.create(
-            user=issue.creator,
-            notification_type='ISSUE',  
-            title="Issue Raised",
-            message=f"You have successfully raised an issue: {issue.title}. Our staff will review it shortly."
+            user = issue.creator,
+            notification_type = 'ISSUE',  
+            title = "Issue Raised",
+            message = f"You have successfully raised an issue: {issue.title}. Our staff will review it shortly."
         )   
 
         admin_user = request.user.community.admin 
         if admin_user:
             Notification.objects.create(
-                user=admin_user,
+                user = admin_user,
                 notification_type='ISSUE',
                 title="New Issue Reported ⚠️",
                 message=f"Resident {request.user.name} raised a new issue: '{issue.title}'. Please review and assign staff."
             )
+            
+            if issue.creator:
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_admin_community_{issue.creator.id}",
+                    {
+                    
+                        'type' : 'send_notification',  
+                        'title' : "Issue Raised",
+                        'message' : f"You have successfully raised an issue: {issue.title}. Our staff will review it shortly."
+                    } 
+                )
+            if admin_user:
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_admin_community_{admin_user.id}",
+                    {
+                    
+                        'type':'send_notification',
+                        'title':"New Issue Reported ⚠️",
+                        'message':f"Resident {request.user.name} raised a new issue: '{issue.title}'. Please review and assign staff."
+                    }
+                )
 
         images_data = request.FILES.getlist('images') 
         for image_data in images_data:
-            IssueImage.objects.create(issue=issue, image=image_data)
+                IssueImage.objects.create(issue=issue, image=image_data)
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-    def update(self, request, pk=None, *args, **kwargs):
+    def update(self, request, pk, *args, **kwargs):
         kwargs['partial'] = True 
         
         try:
@@ -149,22 +173,68 @@ class IssueViewSet(viewsets.ModelViewSet):
                     title="Staff Assigned",
                     message=f"Admin has assigned {new_staff.name} to handle your issue: '{updated_issue.title}'."
                 )
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(             
+                    f"user_admin_community_{new_staff.id}",
+                        {
+                        
+                            'type':'send_notification',
+                            'title':"Issue has been Assigned ⚠️",
+                            'message': f"Admin assigned you the issue '{updated_issue.title}' and tracking status is '{updated_issue.status}'."
+                        }
+                )
+                if updated_issue.creator:
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_admin_community_{issue.creator.id}",
+                        {
+                            'type':'send_notification',
+                            'title':"Staff Assigned ⚠️",
+                            'message':f"admin  assigned the issue '{updated_issue.title}' to the staff '{updated_issue.assigned_staff}'"
+                        }
+                    )
+            return Response(serializer.data)
 
-        if user.role == 'STAFF' and old_status != 'Resolved' and updated_issue.status == 'Resolved':
-            Notification.objects.create(
-                user=updated_issue.creator,
-                notification_type='ISSUE',
-                title="Issue Resolved! 🎉",
-                message=f"Your issue '{updated_issue.title}' has been successfully resolved by {user.name}."
-            )
+
+        if user.role == 'STAFF' and old_status != 'Resolved' and updated_issue.status in  ['In-Progress','Resolved']:
+            status_label = "Resolved" if updated_issue.status == 'Resolved' else "In-Progress"
+            status_emoji = "🎉" if updated_issue.status == 'Resolved' else "⚙️"
+            if updated_issue.creator:
+                Notification.objects.create(
+                    user=updated_issue.creator,
+                    notification_type='ISSUE',
+                    title="Issue Resolved! 🎉",
+                    message=f"Your issue '{updated_issue.title}' tracking status has been updated to {status_label} by {user.name}."
+                )
             admin_user = getattr(request.user.community, 'admin', None)
             if admin_user:
                 Notification.objects.create(
                     user=admin_user,
                     notification_type='ISSUE',  
                     title="Issue Resolved",
-                    message=f"Staff {user.name} has resolved the issue: '{updated_issue.title}'."
-                )   
-        
-        return Response(serializer.data)
+                    message=f"Staff {request.user.name} has changed status to {updated_issue.status} of the  issue: '{updated_issue.title}'."
+                )  
+            channel_layer = get_channel_layer()
+            if admin_user:
+                async_to_sync(channel_layer.group_send)(             
+                    f"user_admin_community_{admin_user.id}",
+                        {
+                            'type':'send_notification',
+                            'title':" Issue Updated ⚠️",
+                            'message': f"Staff {user.name} updated the '{updated_issue.title}' status to '{updated_issue.status}'."
+                    }
+                        
+                )
+            if updated_issue.creator:
+                async_to_sync(channel_layer.group_send)(
+                        f"user_admin_community_{updated_issue.creator.id}",
+                        {
+                            'type':'send_notification',
+                            'title':" Issue Updated ⚠️",
+                            'message': f"Staff member {user.name} updated your issue '{updated_issue.title}' status to '{updated_issue.status}'."
+                        }
+                )
 
+            
+            return Response(serializer.data)
+
+        return Response({"message": "Issue tracking fields updated successfully."}, status=status.HTTP_200_OK)

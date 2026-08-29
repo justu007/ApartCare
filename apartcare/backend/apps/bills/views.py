@@ -22,6 +22,8 @@ import calendar
 from decimal import Decimal
 from apps.notification.models import Notification
 from django.contrib.auth import get_user_model
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class GenerateBillsAPIView(APIView):
     permission_classes = [IsAuthenticated,IsAdmin]
@@ -40,7 +42,7 @@ class GenerateBillsAPIView(APIView):
         if billing_year > current_date.year or (billing_year == current_date.year and billing_month > current_date.month):
             return Response(
                 {"error": "Invalid timeline. You cannot generate bills for future months."}, 
-                status=status.HTTP_400_BAD_REQUEST
+                status = status.HTTP_400_BAD_REQUEST
             )
 
         try:
@@ -158,7 +160,25 @@ class GenerateBillsAPIView(APIView):
 
         if notifications_to_create:
             Notification.objects.bulk_create(notifications_to_create)
-
+            channel_layer = get_channel_layer()
+            for resident in residents_to_notify:
+                async_to_sync(channel_layer.group_send)(
+                    f"user_admin_community_{resident.id}",
+                    {
+                        "type": "send_notification",
+                        "title": "Bill Paid ✅",
+                        "message": f"A new {bill_type.title()} bill for {billing_month}/{billing_year} has been generated for your flat."
+                    }
+                )
+            if admin_user:
+                async_to_sync(channel_layer.group_send)(
+                    f"user_admin_community_{admin_user.id}", 
+                    {
+                        "type": "send_notification",
+                        "title": f"{bill_type.title()} Bills Generated",
+                        "message": f"Successfully generated {len(bills_to_create)} {bill_type.lower()} bills for {billing_month}/{billing_year}."
+                    }
+                )
         
         success_msg = f"Successfully generated {len(bills_to_create)} {bill_type.lower()} bills."
         if skipped_count > 0:
@@ -222,6 +242,8 @@ class CreateRazorpayOrderAPIView(APIView):
             "name": request.user.name,
             "email": request.user.email,
         })
+
+        
 class VerifyRazorpayPaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -257,12 +279,25 @@ class VerifyRazorpayPaymentAPIView(APIView):
 
                 admin_user = request.user.community.admin
                 if admin_user:
-                    Notification.objects.create(
+                    admin_notification = Notification.objects.create(
                         user=admin_user,
                         notification_type='SYSTEM',
                         title="Bill Paid ✅",
                         message=f"{request.user.name} has paid the {bill.bill_type.lower()} bill for {bill.billing_month}/{bill.billing_year}."
-                    )   
+                    )
+
+                    channel_layer = get_channel_layer()
+
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_admin_community_{admin_user.id}", 
+                        {
+                            "type": "send_notification",
+                            "title": "Bill Paid ✅",
+                            "message": f"{request.user.name} has paid the {bill.bill_type.lower()} bill for {bill.billing_month}/{bill.billing_year}."
+                        }
+                    )
+
+                
                     
 
             return Response({"message": "Payment verified and successful!"}, status=status.HTTP_200_OK)

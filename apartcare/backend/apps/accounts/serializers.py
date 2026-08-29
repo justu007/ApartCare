@@ -63,7 +63,7 @@ class LoginSerializer(serializers.Serializer):
             if not user.community:
                 raise serializers.ValidationError("User is not assigned to any community.")
             
-            if user.community.is_active is False:
+            if not  user.community.is_active :
                 raise serializers.ValidationError("Your community is currently inactive. Please contact your Admin.")
 
 

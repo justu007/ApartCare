@@ -14,5 +14,6 @@ urlpatterns = [
     path('community/my-subscription/', MyCommunitySubscriptionAPIView.as_view(), name='my-community-subscription'),
     path('superadmin-announcements/', SuperAdminAnnouncementAPIView.as_view(), name='superadmin-announcements'),
     path('superadmin-notifications/', SuperAdminNotificationAPIView.as_view(), name='superadmin-notifications'),
+    path('chat-history/<str:room_type>/<int:room_id>/', SupportChatHistoryView.as_view(), name='chat-history'),
              
 ]

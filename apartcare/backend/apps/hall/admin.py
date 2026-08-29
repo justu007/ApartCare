@@ -18,6 +18,7 @@ class CommunityHallAdmin(admin.ModelAdmin):
         'capacity',
         'rent_per_seat',
         'is_active_colored',
+        'ac_room',
         'created_at'
     )
 

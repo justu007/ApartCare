@@ -45,10 +45,6 @@ class SaaSPaymentLedger(models.Model):
     status = models.CharField(max_length=20, default='SUCCESS')
 
 
-
-from django.db import models
-from django.conf import settings
-
 class SuperAdminAnnouncement(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()

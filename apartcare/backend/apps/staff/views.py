@@ -8,14 +8,16 @@ from django.db.models import Sum
 from django.utils import timezone
 from apps.salary.models import SalaryPayment, Transaction
 from apps.meeting.models import Meeting
+
+
+
 class StaffDashboardAPIView(APIView):
-    permission_classes = [IsAuthenticated] # Add IsStaff if you have a custom permission
+    permission_classes = [IsAuthenticated] 
 
     def get(self, request):
         user = request.user
         community_name = user.community.name if getattr(user, 'community', None) else "Not Assigned"
 
-        # ... (Keep all your existing profile, task, and salary logic exactly the same) ...
         if hasattr(user, 'staff_profile'):
             profile = user.staff_profile
             designation = profile.designation
@@ -35,7 +37,6 @@ class StaffDashboardAPIView(APIView):
 
         now = timezone.now()
         
-        # Salary logic
         paid_this_month = Transaction.objects.filter(
             payee=user, status='SUCCESS', created_at__year=now.year, created_at__month=now.month
         ).aggregate(Sum('amount'))['amount__sum'] or 0.00
@@ -58,17 +59,14 @@ class StaffDashboardAPIView(APIView):
         else:
             salary_status = "PENDING"
 
-        # --- 🎯 NEW: MEETINGS LOGIC ---
         staff_meetings = Meeting.objects.filter(
             community=user.community,
-            # Filter so staff only see meetings meant for STAFF or ALL
             target_audience__in=['STAFF', 'ALL'] 
         ).order_by('meeting_time')
 
         upcoming_meetings = staff_meetings.filter(meeting_time__gte=now)
         missed_count = staff_meetings.filter(meeting_time__lt=now).count()
         
-        # Check if your model has 'is_urgent'. If not, remove the urgent_count logic.
         urgent_count = upcoming_meetings.filter(is_urgent=True).count() if hasattr(Meeting, 'is_urgent') else 0
         
         next_meeting = upcoming_meetings.first()

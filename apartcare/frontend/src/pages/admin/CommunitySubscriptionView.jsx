@@ -9,7 +9,6 @@ const CommunitySubscriptionView = () => {
     const [checkoutLoading, setCheckoutLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // 🎯 NEW: Dynamic state handler for beautiful message windows
     const [uiNotification, setUiNotification] = useState({ type: '', text: '' });
 
     useEffect(() => {
@@ -30,22 +29,39 @@ const CommunitySubscriptionView = () => {
         loadPageData();
     }, []);
 
+
+
     const handleSubscriptionPayment = async (planType) => {
+        if (mySub?.plan_type ==='MONTHLY'|| mySub?.plan_type ==='YEARLY'){
+            if(planType === 'YEARLY' && mySub.plan_type ==='MONTHLY' ){
+                setCheckoutLoading(planType);
+                setUiNotification({ type: '', text: '' });
+            }
+            else{
+                setUiNotification({
+                    type:'error',
+                    text :'cannot subscribed again ,u already subscribed'
+                })
+                return
+            }
+        }
+    
         setCheckoutLoading(planType);
-        setUiNotification({ type: '', text: '' }); // Clear old messages
+        setUiNotification({ type: '', text: '' }); 
 
         try {
+            
             const orderRes = await axiosInstance.post('/webapp/community/create-saas-order/', { plan_type: planType });
+            
             const { order_id, amount, currency } = orderRes.data;
 
             const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_Sa7XssoYF3nKSn", 
-                amount: order_id.amount,
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_SzUCexP731jTut", 
+                amount: amount, 
                 currency: currency,
                 name: "ApartCare SaaS Systems",
-                // 🎯 FIXED: Corrected template string interpolation from [₹{planType}]
                 description: `SaaS Premium Licensing Node Upgrade [${planType}]`,
-                order_id: order_id,
+                order_id: order_id, 
                 handler: async function (response) {
                     try {
                         const verifyRes = await axiosInstance.post('/webapp/community/verify-saas-payment/', {
@@ -55,13 +71,11 @@ const CommunitySubscriptionView = () => {
                             plan_type: planType
                         });
                         
-                        // 🎯 REPLACED ALERT: Render beautiful success banner
                         setUiNotification({
                             type: 'success',
                             text: verifyRes.data.message || "License activated successfully! Syncing configurations..."
                         });
 
-                        // Automatically refresh window after showing the success state
                         setTimeout(() => {
                             window.location.reload(); 
                         }, 2500);
@@ -82,8 +96,7 @@ const CommunitySubscriptionView = () => {
             const rzp = new window.Razorpay(options);
             rzp.open();
         } catch (err) {
-            console.error(err);
-            // 🎯 REPLACED ALERT: Render beautiful embedded error window
+            console.error("Razorpay setup initialization crash trace:", err);
             setUiNotification({
                 type: 'error',
                 text: "Could not initialize payment transaction with checkout server routing configuration."
@@ -93,13 +106,13 @@ const CommunitySubscriptionView = () => {
         }
     };
 
+
     if (loading) return <div className="p-10 text-center text-slate-400 font-bold animate-pulse">Synchronizing Tenancy Billing Nodes...</div>;
 
     return (
-        <div className="max-w-5xl mx-auto p-6 text-slate-200 relative">
+        <div className="max-w-5xl mx-auto p-12 text-slate-200 relative">
             {error && <div className="p-4 mb-6 text-sm bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl">{error}</div>}
 
-            {/* 🎯 NEW: BEAUTIFUL EMBEDDED NOTIFICATION ALERTS STATUS WINDOW */}
             {uiNotification.text && (
                 <div className={`p-4 mb-6 text-sm font-semibold border rounded-xl shadow-xl transition-all duration-300 transform animate-fade-in ${
                     uiNotification.type === 'success' 
@@ -113,7 +126,6 @@ const CommunitySubscriptionView = () => {
                 </div>
             )}
 
-            {/* HEADER CURRENT ACTIVE STATUS TRACK CONTAINER */}
             <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
                     <h2 className="text-xl font-black text-white">Community Workspace Subscription</h2>

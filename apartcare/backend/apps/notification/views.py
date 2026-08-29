@@ -85,6 +85,15 @@ class AnnouncementAPIView(APIView):
 
                     if u.email:
                         recipient_emails.append(u.email)
+                    
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_admin_community_{u.id}", 
+                        {
+                            "type": "send_notification",
+                            "title": f"{prefix}{announcement.title}",
+                            "message": announcement.message
+                        }
+                    )
 
 
                 if notifications_to_create:
