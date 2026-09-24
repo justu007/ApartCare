@@ -64,7 +64,7 @@ EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=your_email@gmail.com
 EMAIL_HOST_PASSWORD=your_smtp_app_password
-
+```
 Create a file named .env inside the frontend/ directory:
 
 # API Base Route
