@@ -21,9 +21,9 @@ class HallBookingSerializer(serializers.ModelSerializer):
 
     resident_name = serializers.CharField(source='resident.name', read_only=True)
     hall_name = serializers.CharField(source='hall.name', read_only=True)
-    
+    ac_room = serializers.CharField(source='hall.ac_room', read_only=True)
     flat_name = serializers.SerializerMethodField(read_only=True)
-
+    
     class Meta:
         model = HallBooking
         fields = [

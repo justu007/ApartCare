@@ -1,0 +1,67 @@
+services:
+  # 1. PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: apartcare_db
+    restart: always
+    environment:
+      POSTGRES_DB: apartcare_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # 2. Redis for Django Channels / WebSockets
+  redis:
+    image: redis:7-alpine
+    container_name: apartcare_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # 3. Backend (Django / Daphne)
+  backend:
+    build:
+      context: ./apartcare/backend
+      dockerfile: Dockerfile
+    container_name: apartcare_backend
+    restart: always
+    command: >
+      sh -c "python manage.py migrate &&
+             daphne -b 0.0.0.0 -p 8000 community.asgi:application"
+    volumes:
+      - ./apartcare/backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=apartcare_super_secret_docker_key_2026
+      - DB_NAME=apartcare_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgrespassword
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/1
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_SzUCexP731jTut}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-dummy_secret}
+    depends_on:
+      - db
+      - redis
+
+  # 4. Frontend (React / Vite via Nginx)
+  frontend:
+    build:
+      context: ./apartcare/frontend
+      dockerfile: Dockerfile
+    container_name: apartcare_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

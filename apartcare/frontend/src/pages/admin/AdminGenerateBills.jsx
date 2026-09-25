@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { generateBills, getOccupiedFlats, getGeneratedBills } from '../../api/admin'; 
-import axiosInstance from '../../api/axios'; 
-
+import axiosInstance from '../../api/axios.js';
 const AdminGenerateBills = () => {
     const [maintenanceFee, setMaintenanceFee] = useState(0);
     const [waterRate, setWaterRate] = useState(0);
