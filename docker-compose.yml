@@ -1,19 +1,19 @@
 services:
-  # 1. PostgreSQL Database
+  # 1. PostgreSQL Database Service
   db:
     image: postgres:15-alpine
     container_name: apartcare_db
     restart: always
     environment:
-      POSTGRES_DB: apartcare_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
-  # 2. Redis for Django Channels / WebSockets
+  # 2. Redis Service for Channels & WebSockets
   redis:
     image: redis:7-alpine
     container_name: apartcare_redis
@@ -21,7 +21,7 @@ services:
     ports:
       - "6379:6379"
 
-  # 3. Backend (Django / Daphne)
+  # 3. Backend (Django / Daphne ASGI)
   backend:
     build:
       context: ./apartcare/backend
@@ -36,22 +36,26 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=True
-      - SECRET_KEY=apartcare_super_secret_docker_key_2026
-      - DB_NAME=apartcare_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgrespassword
-      - DB_HOST=db
-      - DB_PORT=5432
-      - REDIS_URL=redis://redis:6379/1
-      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
-      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_SzUCexP731jTut}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-dummy_secret}
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - REDIS_URL=${REDIS_URL}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:
       - db
       - redis
 
-  # 4. Frontend (React / Vite via Nginx)
+  # 4. Frontend (React / Vite built and served with Nginx)
   frontend:
     build:
       context: ./apartcare/frontend
