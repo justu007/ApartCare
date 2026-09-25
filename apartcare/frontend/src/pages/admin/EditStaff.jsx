@@ -6,11 +6,12 @@ import { useDispatch } from 'react-redux';
 import { editUser, editStaff } from '../../features/users/userSlice'; 
 
 const EditStaff = () => {
+
     const { id } = useParams(); 
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const location = useLocation();
-    
+    const [popup, setPopup] = useState({ isOpen: false, status: '', message: '' });
     const userToEdit = location.state?.userToEdit;
     const returnTab = location.state?.returnTab || 'staff';
     const returnPage = location.state?.returnPage || 1;
@@ -30,27 +31,132 @@ const EditStaff = () => {
         if (!userToEdit) navigate('/admin/directory'); 
     }, [userToEdit, navigate]);
 
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault(); 
+    //     setLoading(true); 
+    //     setError('');
+    //     setSuccessMessage('');
+        
+    //     try {
+    //         await dispatch(editUser({ id: id, data: { name, email, phone } })).unwrap();
+    //         await dispatch(editStaff({ id: id, data: { designation, monthly_salary: salary } })).unwrap();
+            
+    //         // 🎯 REPLACED ALERT: Render beautiful success banner inline
+    //         setSuccessMessage("🎉 Staff member profiles Updated Successfully!.....");
+            
+    //         // Wait 2 seconds to let the administrator view the completion status window
+    //         setTimeout(() => {
+    //             navigate('/admin/directory', { state: { activeTab: returnTab, currentPage: returnPage } });
+    //         }, 2000);
+            
+    //     } catch (err) {
+    //         console.error("Failed to update:", err);
+    //         setError("Failed to update user parameters. Check server sync connections and retry.");
+    //         setPopup({
+    //             isOpen: true,
+    //             status: 'error',
+    //             message: errorMsg
+    //         });
+    //     } finally { 
+    //         setLoading(false); 
+    //     }
+    // };
     const handleSubmit = async (e) => {
         e.preventDefault(); 
         setLoading(true); 
         setError('');
         setSuccessMessage('');
+
+        // 1. Sanitize input values
+        const cleanPhone = phone ? String(phone).replace(/\D/g, '') : '';
+        const trimmedName = name.trim();
+        const trimmedEmail = email.trim();
+        const trimmedDesignation = designation ? designation.trim() : '';
+        const parsedSalary = salary ? Number(salary) : 0;
+
+        if (cleanPhone) {
+            if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+                setLoading(false);
+                setError("Phone number must be exactly 10 digits and start with 6, 7, 8, or 9.");
+                return;
+            }
+        }
+
+        // 3. Frontend Salary Validation
+        if (parsedSalary < 0) {
+            setLoading(false);
+            const msg = "Monthly salary cannot be negative.";
+            setError(msg);
+            setPopup({ isOpen: true, status: 'error', message: msg });
+            return;
+        }
         
         try {
-            await dispatch(editUser({ id: id, data: { name, email, phone } })).unwrap();
-            await dispatch(editStaff({ id: id, data: { designation, monthly_salary: salary } })).unwrap();
+            // Update Base User credentials
+            await dispatch(editUser({ 
+                id: id, 
+                data: { 
+                    name: trimmedName, 
+                    email: trimmedEmail, 
+                    phone: cleanPhone 
+                } 
+            })).unwrap();
+
+            // Update Staff-specific credentials
+            await dispatch(editStaff({ 
+                id: id, 
+                data: { 
+                    designation: trimmedDesignation, 
+                    monthly_salary: parsedSalary 
+                } 
+            })).unwrap();
             
-            // 🎯 REPLACED ALERT: Render beautiful success banner inline
-            setSuccessMessage("🎉 Staff member profiles Updated Successfully!.....");
+            // Render inline success banner
+            setSuccessMessage("🎉 Staff member profile updated successfully!");
             
-            // Wait 2 seconds to let the administrator view the completion status window
             setTimeout(() => {
                 navigate('/admin/directory', { state: { activeTab: returnTab, currentPage: returnPage } });
-            }, 2000);
+            }, 1500);
             
         } catch (err) {
-            console.error("Failed to update:", err);
-            setError("Failed to update user parameters. Check server sync connections and retry.");
+            console.error("Failed to update staff member:", err);
+
+            // Handle unwrapped Redux payload (err) vs raw Axios error (err.response?.data)
+            const errorData = err?.response?.data || err;
+            let resolvedError = "Failed to update staff profile. Please verify your inputs.";
+
+            if (typeof errorData === 'string') {
+                resolvedError = errorData;
+            } else if (errorData && typeof errorData === 'object') {
+                const targetField = 
+                    errorData.phone ||
+                    errorData.email ||
+                    errorData.name ||
+                    errorData.designation ||
+                    errorData.monthly_salary ||
+                    errorData.non_field_errors ||
+                    errorData.detail ||
+                    errorData.error;
+
+                if (Array.isArray(targetField)) {
+                    resolvedError = targetField[0];
+                } else if (typeof targetField === 'string') {
+                    resolvedError = targetField;
+                } else {
+                    const firstKey = Object.keys(errorData)[0];
+                    if (firstKey) {
+                        const val = errorData[firstKey];
+                        resolvedError = Array.isArray(val) ? val[0] : String(val);
+                    }
+                }
+            }
+
+            setError(resolvedError);
+            setPopup({
+                isOpen: true,
+                status: 'error',
+                message: resolvedError
+            });
         } finally { 
             setLoading(false); 
         }
@@ -172,6 +278,33 @@ const EditStaff = () => {
                     </button>
                 </div>
             </form>
+            {popup.isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className={`relative w-full max-w-sm p-8 text-center transition-all transform border shadow-2xl rounded-3xl bg-slate-900 ${popup.status === 'success' ? 'border-emerald-500/30 shadow-emerald-900/20' : 'border-rose-500/30 shadow-rose-900/20'}`}>
+                        <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full border-4 ${popup.status === 'success' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'}`}>
+                            {popup.status === 'success' ? (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                </svg>
+                            ) : (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            )}
+                        </div>
+                        <h3 className={`text-2xl font-black mb-2 ${popup.status === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {popup.status === 'success' ? 'Success!' : 'Oops!'}
+                        </h3>
+                        <p className="mb-8 text-sm leading-relaxed text-slate-300">{popup.message}</p>
+                        <button 
+                            onClick={() => setPopup({ isOpen: false, status: '', message: '' })} 
+                            className={`w-full py-3.5 font-bold tracking-widest uppercase transition-all duration-300 transform rounded-xl border border-transparent hover:-translate-y-0.5 ${popup.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-900 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]' : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]'}`}
+                        >
+                            {popup.status === 'success' ? 'Awesome' : 'Close'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

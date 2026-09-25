@@ -11,7 +11,10 @@ from django.db import transaction
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+import logging
 
+
+logger = logging.getLogger(__name__)
 class AnnouncementAPIView(APIView):
     permission_classes = [IsAuthenticated]
 

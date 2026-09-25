@@ -123,31 +123,71 @@ const NotificationBell = () => {
             console.error("Failed to mark single notification as read", error);
         }
     };
-
     const handleNotificationClick = async (notification) => {
         if (!notification.is_read) {
             await markSingleAsRead(notification.id);
         }
         setIsOpen(false);
 
-        const userRole = user?.role?.toUpperCase(); 
+        const userRole = user?.role?.toUpperCase();
         const message = notification.message?.toLowerCase() || '';
 
-        let issuePath = userRole === 'ADMIN' ? '/admin/issues' : userRole === 'STAFF' ? '/staff/issues' : '/resident/issues';
-        let hallPath = userRole === 'ADMIN' ? '/admin/manage-venues' : '/resident/venues';
-        let paymentPath = userRole === 'ADMIN' ? '/admin/reports/payments' : userRole === 'STAFF' ? '/staff/salaries' : '/resident/bills';
-        let meetingPath = '/meetings';
+        const issuePath = userRole === 'ADMIN' ? '/admin/issues' : userRole === 'STAFF' ? '/staff/issues' : '/resident/issues';
+        const hallPath = userRole === 'ADMIN' ? '/admin/manage-venues' : '/resident/venues';
+        const paymentPath = userRole === 'ADMIN' ? '/admin/reports/payments' : userRole === 'STAFF' ? '/staff/salaries' : '/resident/bills';
+        const meetingPath = userRole === 'ADMIN' ? '/admin/meetings' : '/meetings';
 
-        if (message.includes('issue') || message.includes('complaint')) navigate(issuePath);
-        else if (message.includes('hall') || message.includes('booking')) navigate(hallPath);
-        else if (message.includes('bill') || message.includes('payment') || message.includes('salary')) navigate(paymentPath);
-        else if (message.includes('meeting')) navigate(meetingPath);
-        else {
-            if (userRole === 'ADMIN') navigate('/admin/dashboard');
-            else if (userRole === 'STAFF') navigate('/staff/dashboard');
-            else navigate('/resident/dashboard');
+
+        const navigationState = {
+            refreshAt: Date.now(),
+            notificationId: notification.id,
+        };
+
+        if (message.includes('issue') || message.includes('complaint') || message.includes('leak')) {
+            if (message.includes('resolved')) {
+                navigationState.defaultTab = 'RESOLVED';
+            } else if (message.includes('assigned') || message.includes('progress')) {
+                navigationState.defaultTab = 'ASSIGNED';
+            } else {
+                navigationState.defaultTab = 'OPEN';
+            }
+            navigate(issuePath, { state: navigationState });
+        } else if (message.includes('hall') || message.includes('booking')) {
+            navigate(hallPath, { state: navigationState });
+        } else if (message.includes('bill') || message.includes('payment') || message.includes('salary')) {
+            navigate(paymentPath, { state: navigationState });
+        } else if (message.includes('meeting') || message.includes('scheduled')) {
+            navigate(meetingPath, { state: navigationState });
+        } else {
+            const dashboardPath = userRole === 'ADMIN' ? '/admin/dashboard' : userRole === 'STAFF' ? '/staff/dashboard' : '/resident/dashboard';
+            navigate(dashboardPath, { state: navigationState });
         }
     };
+
+    // const handleNotificationClick = async (notification) => {
+    //     if (!notification.is_read) {
+    //         await markSingleAsRead(notification.id);
+    //     }
+    //     setIsOpen(false);
+
+    //     const userRole = user?.role?.toUpperCase(); 
+    //     const message = notification.message?.toLowerCase() || '';
+
+    //     let issuePath = userRole === 'ADMIN' ? '/admin/issues' : userRole === 'STAFF' ? '/staff/issues' : '/resident/issues';
+    //     let hallPath = userRole === 'ADMIN' ? '/admin/manage-venues' : '/resident/venues';
+    //     let paymentPath = userRole === 'ADMIN' ? '/admin/reports/payments' : userRole === 'STAFF' ? '/staff/salaries' : '/resident/bills';
+    //     let meetingPath = '/meetings';
+
+    //     if (message.includes('issue') || message.includes('complaint')) navigate(issuePath);
+    //     else if (message.includes('hall') || message.includes('booking')) navigate(hallPath);
+    //     else if (message.includes('bill') || message.includes('payment') || message.includes('salary')) navigate(paymentPath);
+    //     else if (message.includes('meeting')) navigate(meetingPath);
+    //     else {
+    //         if (userRole === 'ADMIN') navigate('/admin/dashboard');
+    //         else if (userRole === 'STAFF') navigate('/staff/dashboard');
+    //         else navigate('/resident/dashboard');
+    //     }
+    // };
 
     return (
         <div className="relative" ref={dropdownRef}>

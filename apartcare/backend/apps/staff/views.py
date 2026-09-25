@@ -8,7 +8,8 @@ from django.db.models import Sum
 from django.utils import timezone
 from apps.salary.models import SalaryPayment, Transaction
 from apps.meeting.models import Meeting
-
+import logging
+logger = logging.getLogger(__name__)
 
 
 class StaffDashboardAPIView(APIView):

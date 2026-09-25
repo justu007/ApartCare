@@ -21,35 +21,7 @@ const Navbar = () => {
     navigate("/auth/login");
   };
 
-  // useEffect(() => {
-  //   if (!isAuthenticated || !user) return;
 
-  //   const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-    
-  //   const targetUserId = user.role === "SUPER_ADMIN" ? "superadmin" : (user.community?.id || user.community);
-    
-  //   if (!targetUserId || String(targetUserId).includes('[object')) return;
-
-  //   // const alertSocket = new WebSocket(`${wsProtocol}localhost:8000/ws/notification/${targetUserId}/`);
-  //   const alertSocket = new WebSocket(`${wsProtocol}localhost:8000/ws/notification/${targetUserId}/`);
-
-  //   alertSocket.onmessage = (event) => {
-  //       try {
-  //           const data = JSON.parse(event.data);
-  //           console.log("🔔 Background Support Push Alert Captured: ", data);
-
-  //           if (location.pathname !== "/admin/hq-chat" && location.pathname !== "/super-admin/admin-chats") {
-  //               setUnreadSupportCount(prev => prev + 1);
-  //           }
-  //       } catch (err) {
-  //           console.error("Failed unpacking global telemetry notice", err);
-  //       }
-  //   };
-
-  //   return () => alertSocket.close();
-  // }, [user, isAuthenticated, location.pathname]);
-
-  // Flush the pending count cache to zero immediately when they tap open the target console viewport tab
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -164,11 +136,13 @@ const Navbar = () => {
 
             {/* RESIDENT ROUTE CHANNELS */}
             {user?.role === "RESIDENT" && (
-            <>
+            <>                
                 <Link to="/resident/dashboard" className="transition-colors hover:text-cyan-400">Dashboard</Link>
                 <Link to="/resident/issues" className="transition-colors hover:text-cyan-400">Issues</Link>
                 <Link to="/resident/bills" className="transition-colors hover:text-cyan-400">My Bills</Link>
                 <Link to="/resident/venues" className="transition-colors hover:text-cyan-400">Book Venue</Link>
+                <Link to="/resident/subscription" className="transition-colors hover:text-cyan-400 ">Subscription</Link>
+
             </>
             )}
             

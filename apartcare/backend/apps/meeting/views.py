@@ -11,10 +11,14 @@ from django.contrib.auth import get_user_model
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Meeting
+from .models import Meeting,MeetingAttendance
 from .serializers import MeetingSerializer
 from apps.notification.models import Notification  
 
+import logging
+
+
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 class MeetingAPIView(APIView):
@@ -54,7 +58,7 @@ class MeetingAPIView(APIView):
                 if parsed_dt and timezone.is_naive(parsed_dt):
                     data['meeting_time'] = timezone.make_aware(parsed_dt, timezone.get_current_timezone())
             except Exception as e:
-                print("⚠️ Meeting time parse warning:", e)
+                logger.error(f"⚠️ Meeting time parse warning: {str(e)}")
 
         serializer = MeetingSerializer(data=data)
         if serializer.is_valid():
@@ -93,7 +97,7 @@ class MeetingAPIView(APIView):
 
             return Response({"message": "Meeting scheduled successfully!"}, status=status.HTTP_201_CREATED)
 
-        print("❌ Serializer Validation Errors:", serializer.errors)
+        logger.error("❌ Serializer Validation Errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

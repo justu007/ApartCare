@@ -9,6 +9,9 @@ from apps.issue.models import Issue
 from django.db.models import Sum
 from apps.bills.models import Bill
 from apps.accounts.permissions import IsResident
+
+import logging
+logger = logging.getLogger(__name__)
 class ResidentDashboardAPIView(APIView):
     permission_classes = [IsAuthenticated,IsResident]
 

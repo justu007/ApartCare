@@ -10,7 +10,10 @@ from .serializers import AdminCreateBlock,AdminCreateFlat
 from rest_framework.generics import ListAPIView
 from .models import Flat
 from .serializers import AvailableFlatSerializer
+import logging
 
+
+logger = logging.getLogger(__name__)
 
     
 class AdminCreateBlockAPIView(APIView):

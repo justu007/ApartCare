@@ -64,6 +64,11 @@ const AdminGenerateBills = () => {
             setElectricityRate(res.data.electricity_rate || 0);
         } catch (err) {
             console.error("Could not fetch settings", err);
+            setPopup({ 
+                isOpen: true, 
+                status: 'error', 
+                message: err.response?.data?.error || err.response?.data?.detail || "Could not fetch settings." 
+            });
         }
     };
 
@@ -92,6 +97,11 @@ const AdminGenerateBills = () => {
             if (totalItems) setTotalPages(Math.ceil(totalItems / 10));
         } catch (err) {
             console.error("Failed to fetch flats", err);
+            setPopup({ 
+                isOpen: true, 
+                status: 'error', 
+                message: err.response?.data?.error || err.response?.data?.detail || "Failed to fetch flats."
+            });
         } finally {
             setFetchingFlats(false);
         }
@@ -105,6 +115,11 @@ const AdminGenerateBills = () => {
             if (response.total) setBillsTotalPages(Math.ceil(response.total / response.limit));
         } catch (err) {
             setBillsError("Failed to load billing history.");
+            setPopup({ 
+                isOpen: true, 
+                status: 'error', 
+                message: err.response?.data?.error || err.response?.data?.detail || "Failed to load billing history."
+            });
         } finally {
             setBillsHistoryLoading(false);
         }
@@ -167,6 +182,11 @@ const AdminGenerateBills = () => {
             else setVariableUnits({});
         } catch (err) {
             setError(err.response?.data?.error || "Failed to generate bills.");
+            setPopup({ 
+                isOpen: true, 
+                status: 'error', 
+                message: err.response?.data?.error || err.response?.data?.detail || "Failed to generate bills."
+            });
         } finally {
             setLoading(false);
         }
@@ -349,6 +369,33 @@ const AdminGenerateBills = () => {
                             <button type="button" onClick={() => setBillsPage(p => Math.min(billsTotalPages, p + 1))} disabled={billsPage === billsTotalPages} className="px-3 py-1.5 text-xs font-bold border border-slate-800 bg-slate-950/40 text-slate-300 disabled:opacity-20 rounded-lg">Next →</button>
                         </div>
                     )}
+                </div>
+            )}
+            {popup.isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className={`relative w-full max-w-sm p-8 text-center transition-all transform border shadow-2xl rounded-3xl bg-slate-900 ${popup.status === 'success' ? 'border-emerald-500/30 shadow-emerald-900/20' : 'border-rose-500/30 shadow-rose-900/20'}`}>
+                        <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full border-4 ${popup.status === 'success' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'}`}>
+                            {popup.status === 'success' ? (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                </svg>
+                            ) : (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            )}
+                        </div>
+                        <h3 className={`text-2xl font-black mb-2 ${popup.status === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {popup.status === 'success' ? 'Success!' : 'Oops!'}
+                        </h3>
+                        <p className="mb-8 text-sm leading-relaxed text-slate-300">{popup.message}</p>
+                        <button 
+                            onClick={() => setPopup({ isOpen: false, status: '', message: '' })} 
+                            className={`w-full py-3.5 font-bold tracking-widest uppercase transition-all duration-300 transform rounded-xl border border-transparent hover:-translate-y-0.5 ${popup.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-900 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]' : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]'}`}
+                        >
+                            {popup.status === 'success' ? 'Awesome' : 'Close'}
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

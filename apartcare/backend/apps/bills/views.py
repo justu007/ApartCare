@@ -24,7 +24,10 @@ from apps.notification.models import Notification
 from django.contrib.auth import get_user_model
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+import logging
 
+
+logger = logging.getLogger(__name__)
 class GenerateBillsAPIView(APIView):
     permission_classes = [IsAuthenticated,IsAdmin]
 

@@ -6,14 +6,14 @@ from rest_framework import status
 from apps.admin_panel.models import AdminResident_Profile
 from apps.accounts.backends import User
 from .serializers import *
+
 from .permissions import IsAdmin
 from rest_framework.permissions import AllowAny ,IsAuthenticated
-from apps.accounts.utils import set_auth_cookies
-from apps.accounts.utils import clear_auth_cookies
+from apps.accounts.utils import *
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.exceptions import InvalidToken
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode,urlsafe_base64_decode
 from django.core.mail import send_mail
@@ -24,6 +24,12 @@ from apps.bills.models import Bill
 from apps.salary.models import Transaction
 from django.db.models import Sum
 from dateutil.relativedelta import relativedelta
+from apps.webapp.models import CommunitySubscription
+import logging
+import re
+
+
+logger = logging.getLogger(__name__)
 
 class SomeProtectedAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -76,7 +82,7 @@ class AdminCreateUserAPIView(APIView):
                     )
                     email_status = f"mail delivered successfullly to {staff_name}"
                 except Exception as e:
-                    print(f"mail couldnt sent : ,{str(e)}")
+                    logger.error(f"Action failed: {str(e)}")
                     email_status  = f"not delivered ,{str(e)}" 
 
             return Response(
@@ -155,9 +161,9 @@ class LogoutView(APIView):
     def post(self, request):
         refresh_token = request.COOKIES.get('refresh_token')
 
-        if refreshToken:
+        if refresh_token:
             try:
-                token = RefreshToken(refreshToken)
+                token = RefreshToken(refresh_token)
                 token.blacklist()
             except Exception:
                 pass
@@ -190,13 +196,13 @@ class  ProfileViewAPIView(APIView):
         if user.role =='RESIDENT':
             profile  = getattr(user,'resident_profile',None)
             mybills = Bill.objects.filter(flat = profile.flat)
-            period = date.today() - relativedelta(months = 2)
-
-            paid_bills = mybills.filter(status = 'PAID',created_at__date__gte= period)
+            # period = date.today() - relativedelta(months = 2)
+            # created_at__date__gte= period
+            paid_bills = mybills.filter(status = 'PAID')
             paid_amount = paid_bills.aggregate(Sum('total_amount'))['total_amount__sum'] or 0.0
             if profile:
-                data['block'] = {'id':'profile.block.id', 'name':'profile.block.name'} if profile.block else None
-                data['flat']  = {'id':'profile.flat.id', 'name': 'profile.flat.name'} if profile.flat else None
+                data['block'] = {'id': profile.block.id, 'name': profile.block.name} if profile.block else None
+                data['flat']  = {'id': profile.flat.id, 'name': profile.flat.name} if profile.flat else None
                 data['paid_amount'] = paid_amount
 
 
@@ -204,15 +210,16 @@ class  ProfileViewAPIView(APIView):
         elif user.role == 'STAFF' :
             profile = getattr(user,'staff_profile',None)
             if profile:
-                data['designation'] = {'designation' : 'profile.designation'} if profile.designation else None
-                data['monthly_salary '] = {'monthly_salary': 'profile.monthly_salary'} if profile.monthly_salary else None
+                data['designation'] = {'designation' : profile.designation} if profile.designation else None
+                data['monthly_salary'] = {'monthly_salary': profile.monthly_salary} if profile.monthly_salary else None
 
-            
+          
         return Response(data)
 
         
     def patch(self, request):
         serializer = ProfileUpdateSerializer(
+            instance = request.user,
             data=request.data, 
             partial=True 
         )
@@ -238,7 +245,7 @@ class DeleteView(APIView):
             return Response({f"user community {user.community} is not active.... "},status = status.HTTP_400_BAD_REQUEST)
         
         if user.role =='SUPER_ADMIN':
-            return Response({f"cannot delete superadmin"},HTTP_403_FORBIDDEN)
+            return Response({f"cannot delete superadmin"},status=status.HTTP_403_FORBIDDEN)
 
         if user.role == 'RESIDENT':
             resident_profile = getattr(user,'resident_profile',None)
@@ -329,8 +336,7 @@ class ForgotPasswordAPIView(APIView):
             
 
             if user:
-                token_generator = PasswordResetTokenGenerator()
-                token = token_generator.make_token(user)
+                token = default_token_generator.make_token(user)
                 uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
                 reset_link = f"{settings.FRONTEND_URL}/reset-password-confirm/{uidb64}/{token}/"
 
@@ -368,19 +374,25 @@ class ForgotPasswordAPIView(APIView):
 class ResetPasswordConfirmAPIView(APIView):
     permission_classes = [AllowAny] 
     def post(self, request):
+        
         uidb64 = request.data.get('uid')
         token = request.data.get('token')
-        new_password = request.data.get('new_password')
 
+        serializer = ResetPasswordSerializer(data = request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+       
         try:
+
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
-
-        if user is not None and PasswordResetTokenGenerator().check_token(user, token):
-            user.set_password(new_password)
-            user.save()
-            return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
-        
+        token_valid = default_token_generator.check_token(user, token) if user else False
+        if user is not None and token_valid:
+                new_password = serializer.validated_data['new_password']
+                user.set_password(new_password)
+                user.save()
+                return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
         return Response({"error": "This reset link is invalid or has expired."}, status=status.HTTP_400_BAD_REQUEST)

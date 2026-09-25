@@ -39,12 +39,18 @@ import GlobalOperatorAnnouncements from "./components/GlobalOperatorAnnouncement
 
 export default function App() {
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth?.user);
+  const {user,authChecked} = useSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(fetchProfile());
   }, []);
-
+  if(!authChecked){
+    return(
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center text-slate-500 font-mono text-xs tracking-widest uppercase">
+        Verifying session...
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>
@@ -58,14 +64,23 @@ export default function App() {
         {/* 1. Fixed narrow navigation row layer (Locked to h-14) */}
         <Navbar />
         
-        {/* 2. 🎯 UNIFIED CONTENT ENGINE ZONE FIX:
-            By using 'flex flex-col pt-20', we ensure the main routing stream box ALWAYS starts exactly
-            below the navbar space, regardless of whether a Super Admin or an Admin is logged in. 
-            Removing 'max-w-7xl mx-auto px-4' from this main layout tag allows your separate sub-pages 
-            to dictate their inner content grids autonomously without causing vertical page overlaps. */}
+
         <main className="flex-1 w-full pt-20 pb-12 flex flex-col relative z-10 min-w-0">
           <Routes>
-            <Route path="/" element={<Navigate to="/auth/login/" replace />} />
+            <Route 
+              path="/" 
+              element={
+                user ? (
+                  user.role === 'SUPER_ADMIN' ? <Navigate to="/super-admin/Dashboard" replace /> :
+                  user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> :
+                  user.role === 'RESIDENT' ? <Navigate to="/resident/dashboard" replace /> :
+                  user.role === 'STAFF' ? <Navigate to="/staff/dashboard" replace /> :
+                  <Navigate to="/profile" replace />
+                ) : (
+                  <Navigate to="/auth/login/" replace />
+                )
+              } 
+            />
             <Route path="/auth/login/" element={<Login />} />
             <Route path="/reset-password-confirm/:uid/:token" element={<ResetPasswordConfirm />} />
 
@@ -106,6 +121,8 @@ export default function App() {
             <Route path="/resident/venues" element={<ProtectedRoute allowedRoles={['RESIDENT']}><ResidentHallBooking /></ProtectedRoute>} />
 
             <Route path="*" element={<div className="text-2xl font-bold text-center mt-10">404 - Page Not Found</div>} />
+            <Route path="/resident/subscription" element={<ProtectedRoute allowedRoles={["RESIDENT"]}><CommunitySubscriptionView /></ProtectedRoute>} />
+
           </Routes>
         </main>
       </div>

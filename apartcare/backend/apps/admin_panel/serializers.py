@@ -5,10 +5,11 @@ from .models import AdminResident_Profile,StaffProfile
 from apps.apartment.models import Flat, Block
 from apps.apartment.models import Community
 from django.contrib.auth import get_user_model
+from apps.accounts.utils import validate_phone_no
 
 User = get_user_model()
 class AdminStaffListSerializer(serializers.ModelSerializer):
-
+    
     designation = serializers.CharField(
         source='staff_profile.designation',
         read_only=True
@@ -30,6 +31,7 @@ class AdminStaffListSerializer(serializers.ModelSerializer):
         source='get_is_active_display',
         read_only=True
     )
+
 
     class Meta:
         model = User
@@ -60,6 +62,8 @@ class AdminResidentListSerializer(serializers.ModelSerializer):
         
 
 class AdminUpdateUserInfo(serializers.ModelSerializer):
+    phone = serializers.CharField(validators=[validate_phone_no])
+
     class Meta:
         model= User
         fields = [

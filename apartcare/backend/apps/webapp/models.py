@@ -4,8 +4,8 @@ import datetime
 from django.utils import timezone
 
 class GlobalSaaSRate(models.Model):
-    monthly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=490.00)
-    yearly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=5999.00)
+    monthly_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    yearly_rate = models.DecimalField(max_digits=10, decimal_places=2)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

@@ -30,8 +30,11 @@ from apps.accounts.models import User
 from django.contrib.auth import get_user_model
 from apps.webapp.models import GlobalSaaSRate, CommunitySubscription, SaaSPaymentLedger
 
+import logging
+
 User = get_user_model()
 
+logger = logging.getLogger(__name__)
 class AdminResidentListAPIView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 

@@ -5,11 +5,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.admin_panel.models import StaffProfile,AdminResident_Profile
 from apps.apartment.models import Flat,Block
 from datetime import date
+from apps.webapp.models import CommunitySubscription
+import re
+from .validators import validate_password_check
+from .utils import validate_phone_no
 
 
 class AdminCreateUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only = True)
-  
+    phone = serializers.CharField(validators=[validate_phone_no])
     class Meta:
         model = User
         fields = [
@@ -45,6 +49,8 @@ class AdminCreateUserSerializer(serializers.ModelSerializer):
             )
 
         return user 
+
+    
     
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -86,6 +92,8 @@ class LoginSerializer(serializers.Serializer):
         }
     
 class ProfileUpdateSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(validators=[validate_phone_no])
+    
     class Meta:
         model = User
         fields = ['name', 'phone']
@@ -93,14 +101,18 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
-
+    
+class ResetPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(required=True,min_length=8,write_only=True,validators = [validate_password_check])
 
 class PasswordChangeSerializer(serializers.Serializer):
-    current_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True, min_length=6)
-    confirm_new_password = serializers.CharField(required=True)
+    current_password = serializers.CharField(required=True,write_only=True)
+    new_password = serializers.CharField(required=True,min_length=8,write_only=True,validators = [validate_password_check])
+    confirm_new_password = serializers.CharField(required=True,write_only=True)
 
     def validate(self, data):
+        
         if data['new_password'] != data['confirm_new_password']:
-            raise serializers.ValidationError({"confirm_new_password": "New passwords do not match."})
+            raise serializers.ValidationError("confirm_newpasswordd and New passwords do not match.")
+
         return data

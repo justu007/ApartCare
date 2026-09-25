@@ -1,127 +1,9 @@
 
-// import React, { useEffect, useState } from 'react';
-// import { getCommunityDetails, addBlock, addFlat } from '../../api/admin';
-
-// const ManageCommunity = () => {
-//     const [community, setCommunity] = useState(null);
-//     const [loading, setLoading] = useState(true);
-//     const [error, setError] = useState('');
-//     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
-//     const [isFlatModalOpen, setIsFlatModalOpen] = useState(false);
-//     const [newBlockName, setNewBlockName] = useState('');
-//     const [newFlatName, setNewFlatName] = useState('');
-//     const [selectedBlockId, setSelectedBlockId] = useState(null); 
-//     const [submitting, setSubmitting] = useState(false);
-
-//     useEffect(() => { fetchCommunityData(); }, []);
-
-//     const fetchCommunityData = async () => {
-//         try {
-//             const data = await getCommunityDetails();
-//             setCommunity(data);
-//         } catch (err) { setError('Failed to load community details.'); } 
-//         finally { setLoading(false); }
-//     };
-
-//     const handleAddBlock = async (e) => {
-//         e.preventDefault(); setSubmitting(true);
-//         try {
-//             await addBlock({ name: newBlockName });
-//             setNewBlockName(''); setIsBlockModalOpen(false); fetchCommunityData(); 
-//         } catch (err) { alert(err.response?.data?.error || "Failed to add block."); } 
-//         finally { setSubmitting(false); }
-//     };
-
-//     const handleAddFlat = async (e) => {
-//         e.preventDefault(); setSubmitting(true);
-//         try {
-//             await addFlat({ name: newFlatName, block: selectedBlockId });
-//             setNewFlatName(''); setIsFlatModalOpen(false); fetchCommunityData(); 
-//         } catch (err) { alert(err.response?.data?.error || "Failed to add flat."); } 
-//         finally { setSubmitting(false); }
-//     };
-
-//     const openFlatModal = (blockId) => { setSelectedBlockId(blockId); setIsFlatModalOpen(true); };
-
-//     if (loading) return <div className="mt-20 text-xl font-semibold text-center text-slate-400">Loading Community...</div>;
-//     if (error) return <div className="mt-20 text-center text-rose-500">{error}</div>;
-//     if (!community) return null;
-
-//     return (
-//         <div className="max-w-6xl p-6 mx-auto mt-8">
-//             <div className="flex items-center justify-between pb-4 mb-8 border-b border-slate-800">
-//                 <div>
-//                     <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">{community.name}</h1>
-//                     <p className="mt-1 text-slate-400">{community.address}</p>
-//                 </div>
-//                 <button onClick={() => setIsBlockModalOpen(true)} className="px-5 py-2.5 text-sm font-bold text-white transition-all duration-300 transform rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:-translate-y-0.5">
-//                     + Add New Block
-//                 </button>
-//             </div>
-
-//             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-//                 {community.blocks && community.blocks.length > 0 ? (
-//                     community.blocks.map((block) => (
-//                         <div key={block.id} className="p-6 transition-all duration-300 border shadow-lg bg-slate-900 border-slate-800 rounded-2xl hover:shadow-cyan-900/20">
-//                             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-//                                 <h3 className="text-xl font-bold text-slate-100">Block {block.name}</h3>
-//                                 <button onClick={() => openFlatModal(block.id)} className="text-sm font-semibold transition-colors text-cyan-400 hover:text-cyan-300">
-//                                     + Add Flat
-//                                 </button>
-//                             </div>
-//                             <div className="flex flex-wrap gap-2 mt-2">
-//                                 {block.flats && block.flats.length > 0 ? (
-//                                     block.flats.map((flat) => (
-//                                         <span key={flat.id} className="px-3 py-1.5 text-xs font-bold tracking-wider rounded border text-slate-300 bg-slate-800/50 border-slate-700">
-//                                             {flat.name}
-//                                         </span>
-//                                     ))
-//                                 ) : (
-//                                     <span className="text-sm text-slate-500">No flats added yet.</span>
-//                                 )}
-//                             </div>
-//                         </div>
-//                     ))
-//                 ) : (
-//                     <div className="p-10 text-center border shadow-lg col-span-full text-slate-400 bg-slate-900 border-slate-800 rounded-2xl">
-//                         No blocks found. Click "+ Add New Block" to get started!
-//                     </div>
-//                 )}
-//             </div>
-
-//             {/* Dark Mode Modals */}
-//             {(isBlockModalOpen || isFlatModalOpen) && (
-//                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-//                     <div className="w-full max-w-sm p-6 border shadow-2xl bg-slate-900 border-slate-800 rounded-2xl">
-//                         <h2 className="mb-4 text-xl font-bold text-slate-100">{isBlockModalOpen ? 'Add New Block' : 'Add New Flat'}</h2>
-//                         <form onSubmit={isBlockModalOpen ? handleAddBlock : handleAddFlat}>
-//                             <input 
-//                                 type="text" 
-//                                 value={isBlockModalOpen ? newBlockName : newFlatName} 
-//                                 onChange={(e) => isBlockModalOpen ? setNewBlockName(e.target.value) : setNewFlatName(e.target.value)} 
-//                                 placeholder={isBlockModalOpen ? "e.g. A, B, North Tower" : "e.g. 101, 204B"}
-//                                 required 
-//                                 className="w-full p-3 mb-5 transition-all duration-200 border outline-none bg-slate-800/50 border-slate-700 text-slate-100 rounded-xl focus:bg-slate-800 focus:ring-2 focus:ring-cyan-500 focus:border-transparent placeholder-slate-500"
-//                             />
-//                             <div className="flex justify-end gap-3">
-//                                 <button type="button" onClick={() => isBlockModalOpen ? setIsBlockModalOpen(false) : setIsFlatModalOpen(false)} className="px-5 py-2.5 text-sm font-bold transition-all duration-300 border rounded-xl text-slate-300 border-slate-700 bg-slate-800/50 hover:bg-slate-700 hover:text-white">Cancel</button>
-//                                 <button type="submit" disabled={submitting} className="px-5 py-2.5 text-sm font-bold text-white transition-all duration-300 transform rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:-translate-y-0.5 disabled:opacity-50">
-//                                     {submitting ? 'Saving...' : 'Save'}
-//                                 </button>
-//                             </div>
-//                         </form>
-//                     </div>
-//                 </div>
-//             )}
-//         </div>
-//     );
-// };
-
-// export default ManageCommunity;
 import React, { useEffect, useState } from 'react';
 import { getCommunityDetails, addBlock, addFlat } from '../../api/admin';
 
 const ManageCommunity = () => {
+    const [popup, setPopup] = useState({ isOpen: false, status: '', message: '' });
     const [community, setCommunity] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -146,7 +28,8 @@ const ManageCommunity = () => {
         try {
             await addBlock({ name: newBlockName });
             setNewBlockName(''); setIsBlockModalOpen(false); fetchCommunityData(); 
-        } catch (err) { alert(err.response?.data?.error || "Failed to add block."); } 
+            setPopup({ isOpen: true, status: 'success', message: 'Complex Block registered successfully.' });
+        } catch (err) { setPopup({ isOpen: true, status: 'error', message: err.response?.data?.error || "Failed to add block." }); } 
         finally { setSubmitting(false); }
     };
 
@@ -155,7 +38,8 @@ const ManageCommunity = () => {
         try {
             await addFlat({ name: newFlatName, block: selectedBlockId });
             setNewFlatName(''); setIsFlatModalOpen(false); fetchCommunityData(); 
-        } catch (err) { alert(err.response?.data?.error || "Failed to add flat."); } 
+            setPopup({ isOpen: true, status: 'success', message: 'Flat Unit asset created successfully.' });
+        } catch (err) { setPopup({ isOpen: true, status: 'error', message: err.response?.data?.error || "Failed to add flat." }); } 
         finally { setSubmitting(false); }
     };
 
@@ -219,6 +103,29 @@ const ManageCommunity = () => {
                                 <button type="submit" disabled={submitting} className="w-1/2 py-2.5 text-slate-950 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl shadow-md uppercase tracking-wider">{submitting ? 'Saving...' : 'Commit Node'}</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {popup.isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className={`relative w-full max-w-sm p-8 text-center transition-all transform border shadow-2xl rounded-3xl bg-slate-900 ${popup.status === 'success' ? 'border-emerald-500/30 shadow-emerald-900/20' : 'border-rose-500/30 shadow-rose-900/20'}`}>
+                        <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full border-4 ${popup.status === 'success' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'}`}>
+                            {popup.status === 'success' ? (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                            ) : (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            )}
+                        </div>
+                        <h3 className={`text-2xl font-black mb-2 ${popup.status === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {popup.status === 'success' ? 'Success!' : 'Oops!'}
+                        </h3>
+                        <p className="mb-8 text-sm leading-relaxed text-slate-300">{popup.message}</p>
+                        <button 
+                            onClick={() => setPopup({ isOpen: false, status: '', message: '' })} 
+                            className={`w-full py-3.5 font-bold tracking-widest uppercase transition-all duration-300 transform rounded-xl border border-transparent hover:-translate-y-0.5 ${popup.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-900 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]' : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]'}`}
+                        >
+                            {popup.status === 'success' ? 'Awesome' : 'Close'}
+                        </button>
                     </div>
                 </div>
             )}

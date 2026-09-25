@@ -1,5 +1,7 @@
 import razorpay
 import datetime
+from decimal import Decimal
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import generics
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
@@ -9,7 +11,7 @@ from rest_framework.permissions import AllowAny ,IsAuthenticated
 from apps.apartment.models import Community
 from .serializers import *
 from apps.accounts.permissions import IsSuperAdmin
-from apps.admin_panel.serializers import CommunityDetailsSerializer
+from apps.admin_panel.serializers import *
 from rest_framework.generics import RetrieveUpdateAPIView,UpdateAPIView
 from apps.accounts.models import User
 from django.core.mail import send_mail
@@ -18,6 +20,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import Sum, Count
 from apps.chat.models import ChatMessage
 from .models import *
+import logging
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -63,7 +67,7 @@ class CreateCommunityAdminAPIView(APIView):
                 email_status = "Credentials dispatched successfully via email."
                 
             except Exception as e:
-                print(f"SMTP EXCEPTION: Failed to deliver community setup email: {str(e)}")
+                logger.error(f"SMTP EXCEPTION: Failed to deliver community setup email: {str(e)}")
                 email_status = f"Failed to deliver email. Server Error details: {str(e)}"
 
             return Response(
@@ -313,16 +317,19 @@ razorpay_client = razorpay.Client(
 class CreateSaaSTransactionAPIView(APIView):
     def post(self, request):
         plan_type = request.data.get('plan_type')
-        
-       
-        monthly_rate = 500.00  
-        yearly_rate = 5000.00
-        
-        raw_amount = monthly_rate if plan_type == 'MONTHLY' else yearly_rate
-        
-        amount_in_paise = int(float(raw_amount) * 100)
-        
+
+        if plan_type not in ['MONTHLY', 'YEARLY']:
+            return Response(
+                {"error": "Invalid plan type. Must be MONTHLY or YEARLY."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )  
+        rates = GlobalSaaSRate.objects.first()
+        if rates:
+            raw_amount = rates.monthly_rate if plan_type == 'MONTHLY' else rates.yearly_rate
         try:
+            amount_in_paise = int(float(raw_amount) * 100)
+        
+        
             order_payload = {
                 "amount": amount_in_paise,  
                 "currency": "INR",
@@ -338,7 +345,7 @@ class CreateSaaSTransactionAPIView(APIView):
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
-            print(f"❌ Razorpay SDK Error: {str(e)}") 
+            logger.error(f"❌ Razorpay SDK Error: {str(e)}") 
             return Response(
                 {"error": "Failed to generate gateway order instance mapping.", "details": str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -357,35 +364,65 @@ class VerifySaaSCheckoutAPIView(APIView):
         razorpay_signature = data.get('razorpay_signature')
         plan_type = data.get('plan_type')
 
+        community = getattr(user, 'community', None)
+        if not community and hasattr(user, 'community_id'):
+            from apps.apartment.models import Community
+            community = Community.objects.filter(id=user.community_id).first()
 
-        subscription = CommunitySubscription.objects.get(community=user.community)
+        if not community:
+            return Response(
+                {"error": "User account is not linked to any community workspace."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         rates = GlobalSaaSRate.objects.first()
-        amount_paid = rates.monthly_rate if plan_type == 'MONTHLY' else rates.yearly_rate
+        if rates:
+            raw_amount = rates.monthly_rate if plan_type == 'MONTHLY' else rates.yearly_rate
+            amount_paid = Decimal(str(raw_amount))
+        else:
+            amount_paid = Decimal('5000.00') if plan_type == 'MONTHLY' else Decimal('300000.00')
 
         today = datetime.date.today()
+        duration_days = 365 if plan_type == 'YEARLY' else 30
 
-        if plan_type == 'MONTHLY':
-            subscription.next_billing_date = today + datetime.timedelta(days=30)
-        elif plan_type == 'YEARLY':
-            subscription.next_billing_date = today + datetime.timedelta(days=365)
+        subscription, _ = CommunitySubscription.objects.get_or_create(
+            community=community,
+            defaults={
+                'plan_type': 'TRIAL',
+                'status': 'ACTIVE',
+                'next_billing_date': today + datetime.timedelta(days=30),
+                'total_amount_paid': Decimal('0.00')
+            }
+        )
+
+        if subscription.next_billing_date and subscription.next_billing_date > today:
+            subscription.next_billing_date = subscription.next_billing_date + datetime.timedelta(days=duration_days)
+        else:
+            subscription.next_billing_date = today + datetime.timedelta(days=duration_days)
 
         subscription.plan_type = plan_type
         subscription.status = 'ACTIVE'
-        subscription.total_amount_paid += amount_paid
+        current_total = subscription.total_amount_paid or Decimal('0.00')
+        subscription.total_amount_paid = current_total + amount_paid
         subscription.save()
-        
-        subscription.community.is_active = True
-        subscription.community.save()
+
+        if hasattr(community, 'is_active'):
+            community.is_active = True
+            community.save()
 
         SaaSPaymentLedger.objects.create(
-            community=user.community,
+            community=community,
             amount_paid=amount_paid,
-            transaction_id=razorpay_payment_id,
+            transaction_id=razorpay_payment_id or f"txn_manual_{int(datetime.datetime.now().timestamp())}",
             status='SUCCESS'
         )
 
-        return Response({"message": f"Payment successfully verified! Your subscription is active for the next {'30' if plan_type == 'MONTHLY' else '365'} days."})
-    
+        return Response({
+            "message": f"Payment successfully verified! Your subscription is active for the next {duration_days} days.",
+            "plan_type": subscription.plan_type,
+            "status": subscription.status,
+            "next_billing_date": str(subscription.next_billing_date)
+        }, status=status.HTTP_200_OK)
 
 
 class MyCommunitySubscriptionAPIView(APIView):
@@ -394,14 +431,24 @@ class MyCommunitySubscriptionAPIView(APIView):
     def get(self, request):
         user = request.user
         
-        if not user.community:
+        community = None
+        if hasattr(user, 'community') and user.community:
+            community = user.community
+        elif hasattr(user, 'resident_profile') and getattr(user.resident_profile, 'community', None):
+            community = user.resident_profile.community
+        elif hasattr(user, 'flat') and getattr(user.flat, 'community', None):
+            community = user.flat.community
+        elif hasattr(user, 'community_id') and user.community_id:
+            community = Community.objects.filter(id=user.community_id).first()
+
+        if not community:
             return Response(
                 {"detail": "Your user account is not linked to any apartment community profile."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+        today = datetime.date.today()       
         subscription, created = CommunitySubscription.objects.get_or_create(
-            community=user.community,
+            community=community,
             defaults={
                 'plan_type': 'TRIAL',
                 'status': 'ACTIVE',
@@ -409,19 +456,35 @@ class MyCommunitySubscriptionAPIView(APIView):
             }
         )
 
+        if not subscription.next_billing_date:
+            subscription.next_billing_date = today + datetime.timedelta(days=30)
+            subscription.save(update_fields=['next_billing_date'])
+
+        payments = SaaSPaymentLedger.objects.filter(
+            community=community
+        ).order_by('-payment_date')
+        
+        invoice_data = SaasPaymentLedgerSerializer(payments, many=True).data
+
+        days_left = 0
+        if hasattr(subscription, 'days_remaining'):
+            days_left = max(0, subscription.days_remaining)
+        elif subscription.next_billing_date:
+            days_left = max(0, (subscription.next_billing_date - today).days)
+
         return Response({
-            "community_name": user.community.name,
-            "admin_email": user.email,
+            "community_name": community.name,
+            "admin_email": getattr(community, 'contact_email', user.email) or user.email,
             "plan_type": subscription.plan_type,                     
-            "plan_type_display": subscription.get_plan_type_display(), 
+            "plan_type_display": subscription.get_plan_type_display() if hasattr(subscription, 'get_plan_type_display') else subscription.plan_type, 
             "status": subscription.status,
-            "days_remaining": max(0, subscription.days_remaining),    
-            "next_bill": str(subscription.next_billing_date),
-            "total_contributed": float(subscription.total_amount_paid)
+            "days_remaining": days_left,    
+            "next_bill": str(subscription.next_billing_date) if subscription.next_billing_date else "N/A",
+            "total_contributed": float(subscription.total_amount_paid or 0),
+            "invoices": invoice_data
         }, status=status.HTTP_200_OK)
 
-
-
+    
 
 class SuperAdminAnnouncementAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -461,7 +524,7 @@ class SuperAdminAnnouncementAPIView(APIView):
                     fail_silently=False,
                 )
             except Exception as e:
-                print(f"SMTP Dispatch Failure: {str(e)}") 
+                logger.error(f"SMTP Dispatch Failure: {str(e)}") 
 
         return Response({"message": "Announcement published successfully and forwarded via email distribution arrays!"}, status=status.HTTP_201_CREATED)
 
@@ -514,5 +577,5 @@ class SupportChatHistoryView(generics.ListAPIView):
             return Response(payload)
 
         except Exception as e:
-            print(f"❌ EXCEPTION IN SUPPORT CHAT HISTORY VIEW: {str(e)}")
+            logger.error(f"❌ EXCEPTION IN SUPPORT CHAT HISTORY VIEW: {str(e)}")
             return Response({"error": "Internal ledger processing failure"}, status=500)

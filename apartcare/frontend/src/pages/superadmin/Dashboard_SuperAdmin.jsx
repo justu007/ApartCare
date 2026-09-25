@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { getSuperAdminAnalytics, getSuperAdminNotifications, dismissSuperAdminNotification } from '../../api/superadmin';
 
@@ -7,6 +6,7 @@ const SuperAdminDashboard = () => {
     const [communities, setCommunities] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [popup, setPopup] = useState({ isOpen: false, status: '', message: '' });
 
     const loadCoreTelemetryData = async () => {
         try {
@@ -17,7 +17,11 @@ const SuperAdminDashboard = () => {
             const activeAlerts = await getSuperAdminNotifications();
             setNotifications(activeAlerts);
         } catch (err) {
-            console.error("Dashboard synchronization error:", err);
+            setPopup({ 
+                isOpen: true, 
+                status: 'error', 
+                message: err.response?.data?.error || err.response?.data?.detail || "Dashboard synchronization error." 
+            });
         } finally {
             setLoading(false);
         }
@@ -28,15 +32,23 @@ const SuperAdminDashboard = () => {
     }, []);
 
     const clearAlertNotification = async (id) => {
-        await dismissSuperAdminNotification(id);
-        setNotifications(prev => prev.filter(n => n.id !== id));
+        try {
+            await dismissSuperAdminNotification(id);
+            setNotifications(prev => prev.filter(n => n.id !== id));
+        } catch (err) {
+            setPopup({
+                isOpen: true,
+                status: 'error',
+                message: err.response?.data?.error || "Failed to dismiss notification."
+            });
+        }
     };
 
     if (loading) return <div className="mt-20 text-xl font-black text-center text-slate-400 animate-pulse">Synchronizing Platform Command Panel Systems...</div>;
 
     return (
         <div className="max-w-7xl mx-auto p-6 text-slate-200">
-            
+
             {/* Header Identity Container */}
             <div className="mb-8 flex justify-between items-center">
                 <div>
@@ -74,42 +86,22 @@ const SuperAdminDashboard = () => {
                 </div>
             )}
 
-            {/* 📊 ROW 1: THE REVENUE & MAIN COUNTERS
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-                <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gross Platform Revenue</span>
-                    <h3 className="text-4xl font-black text-emerald-400 mt-2">₹{summary?.total_platform_revenue?.toLocaleString('en-IN', {minimumFractionDigits: 2})}</h3>
-                    <p className="text-xs text-slate-500 mt-1">Total platform collections</p>
-                </div>
-                <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fully Active Tenants</span>
-                    <h3 className="text-4xl font-black text-cyan-400 mt-2">{summary?.subscribed_count || 0}</h3>
-                    <p className="text-xs text-slate-500 mt-1">Communities with active subscription keys</p>
-                </div>
-                <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl shadow-lg border-rose-900/50 bg-rose-950/10">
-                    <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">Lapsed / Frozen Licenses</span>
-                    <h3 className="text-4xl font-black text-rose-400 mt-2">{summary?.deactivated_count || 0}</h3>
-                    <p className="text-xs text-slate-400 mt-1">Suspended access nodes</p>
-                </div>
-            </div> */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
                 {/* Gross Revenue Box */}
                 <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gross Platform Revenue</span>
                     <h3 className="text-4xl font-black text-emerald-400 mt-2">₹{summary?.total_platform_revenue?.toLocaleString('en-IN')}</h3>
                 </div>
-                
+
                 {/* Fully Active Tenants Box */}
                 <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl shadow-lg">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fully Active Tenants</span>
-                    {/* 🎯 VERIFY: Explicitly points to summary.subscribed_count attribute */}
                     <h3 className="text-4xl font-black text-cyan-400 mt-2">{summary?.subscribed_count || 0}</h3>
                 </div>
-                
+
                 {/* Lapsed / Frozen Licenses Box */}
                 <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl shadow-lg border-rose-900/50 bg-rose-950/10">
                     <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">Lapsed / Frozen Licenses</span>
-                    {/* 🎯 VERIFY: Explicitly points to summary.deactivated_count attribute */}
                     <h3 className="text-4xl font-black text-rose-400 mt-2">{summary?.deactivated_count || 0}</h3>
                 </div>
             </div>
@@ -174,6 +166,35 @@ const SuperAdminDashboard = () => {
                     </table>
                 </div>
             </div>
+
+            {/* 🎯 THE BEAUTIFUL NOTIFICATION POPUP MODAL */}
+            {popup.isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className={`relative w-full max-w-sm p-8 text-center transition-all transform border shadow-2xl rounded-3xl bg-slate-900 ${popup.status === 'success' ? 'border-emerald-500/30 shadow-emerald-900/20' : 'border-rose-500/30 shadow-rose-900/20'}`}>
+                        <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full border-4 ${popup.status === 'success' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'}`}>
+                            {popup.status === 'success' ? (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                </svg>
+                            ) : (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            )}
+                        </div>
+                        <h3 className={`text-2xl font-black mb-2 ${popup.status === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {popup.status === 'success' ? 'Success!' : 'Oops!'}
+                        </h3>
+                        <p className="mb-8 text-sm leading-relaxed text-slate-300">{popup.message}</p>
+                        <button 
+                            onClick={() => setPopup({ isOpen: false, status: '', message: '' })} 
+                            className={`w-full py-3.5 font-bold tracking-widest uppercase transition-all duration-300 transform rounded-xl border border-transparent hover:-translate-y-0.5 ${popup.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-900 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]' : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]'}`}
+                        >
+                            {popup.status === 'success' ? 'Awesome' : 'Close'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

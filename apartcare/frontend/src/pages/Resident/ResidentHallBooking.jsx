@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { getCommunityHalls, getHallAvailability, createResidentBooking, getResidentBookings, initiateHallPayment, verifyHallPayment } from '../../api/hallbooking';
 
@@ -21,7 +19,6 @@ const ResidentHallBooking = () => {
     });
     
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState('');
     const [popup, setPopup] = useState({ isOpen: false, status: '', message: '' });
 
     useEffect(() => { fetchAllData(); }, []);
@@ -37,6 +34,12 @@ const ResidentHallBooking = () => {
             setMyBookings(historyData);
         } catch (err) {
             console.error("Failed to load data", err);
+            setPopup({
+                isOpen: true,
+                status: 'error',
+                message: err.response?.data?.error || err.response?.data?.detail || 'Failed to load your assigned tasks.'
+            });
+
         } finally {
             setLoading(false);
         }
@@ -52,7 +55,11 @@ const ResidentHallBooking = () => {
             const data = await getHallAvailability(selectedHall.id, dateObj.getMonth() + 1, dateObj.getFullYear());
             setBookedSlots(data.booked_slots?.filter(b => b.booking_date === formData.booking_date) || []);
         } catch (err) {
-            console.error("Could not fetch availability", err);
+            setPopup({
+                isOpen: true,
+                status: 'error',
+                message: err.response?.data?.error || err.response?.data?.detail || 'Failed to load your assigned tasks.'
+            });
         }
     };
 
@@ -60,28 +67,24 @@ const ResidentHallBooking = () => {
         setSelectedHall(hall);
         setFormData({ booking_date: '', start_time: '', end_time: '', purpose: '', attendees: '' });
         setBookedSlots([]);
-        setError('');
         setActiveTab('BOOKING_FORM');
     };
 
     const handleTextChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-        setError('');
     };
 
     const calculatedTotal = formData.attendees && selectedHall ? (parseInt(formData.attendees) * selectedHall.rent_per_seat).toFixed(2) : '0.00';
-
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
         if (parseInt(formData.attendees) > selectedHall.capacity) {
-            setError(`This venue can only hold a maximum of ${selectedHall.capacity} people.`);
+            setPopup({ isOpen: true, status: 'error', message: `This venue can only hold a maximum of ${selectedHall.capacity} people.` });
             return;
         }
 
         setSubmitting(true);
-        setError('');
 
         try {
             const payload = {
@@ -96,11 +99,7 @@ const ResidentHallBooking = () => {
 
             await createResidentBooking(payload);
             
-            setPopup({ 
-                isOpen: true, 
-                status: 'success', 
-                message: 'Booking requested successfully! Pending Admin approval.' 
-            });
+            setPopup({ isOpen: true, status: 'success', message: 'Booking requested successfully! Pending Admin approval.' });
             
             const updatedHistory = await getResidentBookings();
             setMyBookings(updatedHistory);
@@ -108,20 +107,12 @@ const ResidentHallBooking = () => {
             
             setTimeout(() => setPopup({ isOpen: false, status: '', message: '' }), 4000);
         } catch (err) {
-            const backendErrors = err.response?.data;
-            if (backendErrors && typeof backendErrors === 'object') {
-                const firstKey = Object.keys(backendErrors)[0];
-                const errorValue = backendErrors[firstKey];
-                const cleanMessage = Array.isArray(errorValue) ? errorValue[0] : errorValue;
-                
-                setError(`${cleanMessage}`);
-            } else {
-                setError('Failed to submit booking request.');
-            }
+            setPopup({ isOpen: true, status: 'error', message: err.response?.data?.error || 'Failed to submit booking request.' });
         } finally {
             setSubmitting(false);
         }
     };
+
     const handlePayment = async (booking) => {
         try {
             setPopup({ isOpen: true, status: 'loading', message: 'Initializing secure checkout...' });
@@ -148,7 +139,7 @@ const ResidentHallBooking = () => {
                         fetchAllData(); 
                         setTimeout(() => setPopup({ isOpen: false, status: '', message: '' }), 4000);
                     } catch (verifyErr) {
-                        setPopup({ isOpen: true, status: 'error', message: 'Payment verification failed. Please contact admin.' });
+                        setPopup({ isOpen: true, status: 'error', message: verifyErr.response?.data?.error || 'Payment verification failed. Please contact admin.' });
                     }
                 },
                 theme: { color: "#06b6d4" }
@@ -167,10 +158,8 @@ const ResidentHallBooking = () => {
     if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-xs font-black font-mono text-slate-500 animate-pulse">SYNCHRONIZING COMPLEX VENUES...</div>;
 
     return (
-        /* 🎯 ULTRA-WIDE HORIZONTAL MATRIX CONTAINER */
         <div className="w-full max-w-full px-6 lg:px-12 mx-auto space-y-6 animate-fade-in pb-12">
             
-            {/* Title Section */}
             <div>
                 <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 tracking-tight">
                     Resident Venues Booking Panel
@@ -178,7 +167,6 @@ const ResidentHallBooking = () => {
                 <p className="mt-1 text-xs text-slate-400 font-mono">Browse compound structural halls, evaluate live slots availability, and execute payments.</p>
             </div>
 
-            {/* TAB ROW BAR LAYOUT */}
             <div className="flex gap-4 border-b border-slate-800 bg-slate-950/20 p-1 rounded-t-xl">
                 <button onClick={() => { setActiveTab('VENUES'); setSelectedHall(null); }} className={`pb-3 pt-2 px-4 text-xs font-black tracking-widest uppercase transition-all relative ${activeTab === 'VENUES' || activeTab === 'BOOKING_FORM' ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}>
                     🏢 Spatial Asset Venues
@@ -190,7 +178,6 @@ const ResidentHallBooking = () => {
                 </button>
             </div>
 
-            {/* TAB 1: VENUE CARDS DISPLAY GRID */}
             {activeTab === 'VENUES' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in">
                     {halls.map((hall) => (
@@ -217,7 +204,6 @@ const ResidentHallBooking = () => {
                 </div>
             )}
 
-            {/* TAB 2: DETAILED REQUEST RUN SHEET */}
             {activeTab === 'BOOKING_FORM' && selectedHall && (
                 <div className="max-w-3xl mx-auto border shadow-2xl bg-slate-900/40 border-slate-800/90 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md animate-fade-in">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
@@ -231,8 +217,6 @@ const ResidentHallBooking = () => {
                     </div>
                     
                     <form onSubmit={handleSubmit} className="space-y-5 text-xs font-bold">
-                        {error && <div className="p-3.5 border font-mono rounded-xl text-rose-400 bg-rose-500/5 border-rose-500/20">❌ PAYLOAD REJECTION EXCEPTION: {error}</div>}
-
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div>
                                 <label className="block mb-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">Purpose of Booking</label>
@@ -280,7 +264,6 @@ const ResidentHallBooking = () => {
                             </div>
                         </div>
 
-                        {/* Real-Time Billing Tracker Panel */}
                         <div className="flex items-center justify-between p-5 border border-cyan-500/20 bg-cyan-500/5 rounded-xl shadow-lg shadow-cyan-950/20">
                             <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">Aggregated Cost Allocation Estimate:</span>
                             <span className="text-2xl font-black font-mono text-cyan-400">₹ {Number(calculatedTotal).toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
@@ -295,7 +278,6 @@ const ResidentHallBooking = () => {
                 </div>
             )}
 
-            {/* TAB 3: BOOKINGS DIRECTORY LEDGER SHEET */}
             {activeTab === 'HISTORY' && (
                 <div className="border border-slate-800 shadow-2xl bg-slate-900/30 rounded-2xl overflow-hidden backdrop-blur-md animate-fade-in">
                     <div className="overflow-x-auto">
@@ -347,14 +329,31 @@ const ResidentHallBooking = () => {
                 </div>
             )}
 
-            {/* Global Context Notice Backdrop Popup window system */}
+            {/* 🎯 THE BEAUTIFUL NOTIFICATION POPUP MODAL */}
             {popup.isOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-                    <div className="relative w-full max-w-sm p-8 text-center border shadow-2xl bg-slate-900 border-slate-800 rounded-3xl flex flex-col items-center">
-                        <h3 className="mb-2 text-xl font-black uppercase tracking-widest text-cyan-400">Ecosystem Notification</h3>
-                        <p className="mb-6 text-sm text-slate-300 leading-relaxed font-medium mt-2">{popup.message}</p>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className={`relative w-full max-w-sm p-8 text-center transition-all transform border shadow-2xl rounded-3xl bg-slate-900 ${popup.status === 'success' ? 'border-emerald-500/30 shadow-emerald-900/20' : popup.status === 'loading' ? 'border-blue-500/30 shadow-blue-900/20' : 'border-rose-500/30 shadow-rose-900/20'}`}>
+                        <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full border-4 ${popup.status === 'success' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : popup.status === 'loading' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'}`}>
+                            {popup.status === 'success' ? (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                            ) : popup.status === 'loading' ? (
+                                <svg className="w-10 h-10 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            ) : (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            )}
+                        </div>
+                        <h3 className={`text-2xl font-black mb-2 ${popup.status === 'success' ? 'text-emerald-400' : popup.status === 'loading' ? 'text-blue-400' : 'text-rose-400'}`}>
+                            {popup.status === 'success' ? 'Success!' : popup.status === 'loading' ? 'Processing...' : 'Oops!'}
+                        </h3>
+                        <p className="mb-8 text-sm leading-relaxed text-slate-300">{popup.message}</p>
+                        
                         {popup.status !== 'loading' && (
-                            <button onClick={() => setPopup({ isOpen: false, status: '', message: '' })} className="w-full py-3 text-xs font-black tracking-widest uppercase border border-cyan-500/20 hover:bg-cyan-500/5 text-cyan-400 rounded-xl transition-all">Dismiss Module</button>
+                            <button 
+                                onClick={() => setPopup({ isOpen: false, status: '', message: '' })} 
+                                className={`w-full py-3.5 font-bold tracking-widest uppercase transition-all duration-300 transform rounded-xl border border-transparent hover:-translate-y-0.5 ${popup.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-900 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]' : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]'}`}
+                            >
+                                {popup.status === 'success' ? 'Awesome' : 'Close'}
+                            </button>
                         )}
                     </div>
                 </div>

@@ -2,7 +2,8 @@ from rest_framework import serializers
 from apps.apartment.models import Community
 from apps.accounts.models import User
 from django.db import transaction
-
+from .models import CommunitySubscription, SaaSPaymentLedger
+import datetime
 
 class CreateCommunityAdmin(serializers.Serializer):
     name = serializers.CharField(max_length=255)
@@ -54,12 +55,15 @@ class CommunityAdminSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "name", "email", "phone"]
 
+
+
 class CommunityListSerializer(serializers.ModelSerializer):
     admin = CommunityAdminSerializer(read_only=True)
 
     class Meta:
         model = Community
         fields = ["id", "name", "address", "admin", "is_active"]
+
 
 
 class CommunityUpdateSerializer(serializers.ModelSerializer):
@@ -84,3 +88,50 @@ class CommunityUpdateSerializer(serializers.ModelSerializer):
 
             return super().update(instance, validated_data)
 
+
+class SaasPaymentLedgerSerializer(serializers.ModelSerializer):
+    invoice_number = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaaSPaymentLedger
+        fields = [
+                 'id',
+                 'invoice_number',
+                 'amount_paid',
+                 'transaction_id',
+                 'payment_date',
+                 'status'
+        ]
+
+    def get_invoice_number(self, obj):
+        if obj.payment_date:
+            year = obj.payment_date.strftime('%Y')
+        else:
+            year = datetime.date.today().year
+        return f"INV-{year}-{obj.id:05d}"
+    
+class CommunitySubscriptionDetailSerializer(serializers.ModelSerializer):
+    community_name = serializers.CharField(source = 'community.name' , read_only=True)
+    invoices = serializers.SerializerMethodField()
+    days_remaining = serializers.IntegerField(read_only = True)
+
+    class Meta:
+        model = CommunitySubscription
+        fields = [
+                'id',
+                'community_name',
+                'plan_type',
+                'status',
+                'created_at',
+                'next_billing_date',
+                'days_remaining',
+                'total_amount_paid',
+                'invoices'       
+        ]
+
+    def get_invoices(self,obj):
+        payments = SaaSPaymentLedger.objects.filter(
+            community = obj.community
+        ).order_by('-payment_date')
+
+        return SaasPaymentLedgerSerializer(payments,many=True).data 

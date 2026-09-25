@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import IssueList from './IssueList';
 import RaiseIssue from './RaiseIssue'; 
@@ -32,7 +31,11 @@ const IssueDashboard = () => {
                 </button>
             </div>
             <div className="mt-4">
-                {activeTab === 'list' ? <IssueList /> : <RaiseIssue />}
+                {activeTab === 'list' ? (
+                    <IssueList />
+                ) : (
+                    <RaiseIssue onSuccess={() => setActiveTab('list')} />
+                )}
             </div>
         </div>
     );

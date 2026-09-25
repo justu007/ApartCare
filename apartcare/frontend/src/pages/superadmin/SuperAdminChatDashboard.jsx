@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axios';
 import AdminSuperAdminChat from '../../components/AdminSuperAdminChat';
@@ -9,6 +8,9 @@ const SuperAdminChatDashboard = () => {
     const [loading, setLoading] = useState(true);
     
     const [unreadMap, setUnreadMap] = useState({});
+    
+    // 🎯 1. Inject the Global Popup State
+    const [popup, setPopup] = useState({ isOpen: false, status: '', message: '' });
 
     useEffect(() => {
         const loadCommunities = async () => {
@@ -18,7 +20,12 @@ const SuperAdminChatDashboard = () => {
                 setCommunities(list);
                 if (list.length > 0) setSelectedCommunity(list[0]);
             } catch (err) {
-                console.error("Failed loading active tenancy directories:", err);
+                // 🎯 2. Route HTTP failures to the UI instead of the console
+                setPopup({ 
+                    isOpen: true, 
+                    status: 'error', 
+                    message: err.response?.data?.error || "Failed to load active tenancy directories." 
+                });
             } finally {
                 setLoading(false);
             }
@@ -33,8 +40,6 @@ const SuperAdminChatDashboard = () => {
         notificationSocket.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log("🔔 Super Admin Dashboard Notification:", data);
-
                 const incomingCommunityId = data.from_room_id;
                 
                 if (incomingCommunityId && String(incomingCommunityId) !== String(selectedCommunity?.id)) {
@@ -44,6 +49,7 @@ const SuperAdminChatDashboard = () => {
                     }));
                 }
             } catch (err) {
+                // Background parsing errors can remain in the console so they don't interrupt the admin's workflow
                 console.error("Error parsing background notification packet:", err);
             }
         };
@@ -96,7 +102,6 @@ const SuperAdminChatDashboard = () => {
                                         <span className="text-[10px] opacity-50 font-mono">Terminal Token ID: #{c.id}</span>
                                     </div>
 
-                                    {/* 🎯 THE COMMUNITY-SPECIFIC UNREAD NOTIFICATION BADGE CARD */}
                                     {unreadMessages > 0 && (
                                         <span className="flex items-center justify-center bg-rose-500 text-white font-black text-[10px] h-5 min-w-5 px-1.5 rounded-full border border-slate-950 animate-pulse shadow-[0_0_10px_#f43f5e] shrink-0">
                                             {unreadMessages}
@@ -122,8 +127,32 @@ const SuperAdminChatDashboard = () => {
                         </div>
                     )}
                 </div>
-
             </div>
+
+            {/* 🎯 3. Render the standardized Error Popup Component */}
+            {popup.isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+                    <div className={`relative w-full max-w-sm p-8 text-center transition-all transform border shadow-2xl rounded-3xl bg-slate-900 ${popup.status === 'success' ? 'border-emerald-500/30 shadow-emerald-900/20' : 'border-rose-500/30 shadow-rose-900/20'}`}>
+                        <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full border-4 ${popup.status === 'success' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'}`}>
+                            {popup.status === 'success' ? (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                            ) : (
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            )}
+                        </div>
+                        <h3 className={`text-2xl font-black mb-2 ${popup.status === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {popup.status === 'success' ? 'Success!' : 'Oops!'}
+                        </h3>
+                        <p className="mb-8 text-sm leading-relaxed text-slate-300">{popup.message}</p>
+                        <button 
+                            onClick={() => setPopup({ isOpen: false, status: '', message: '' })} 
+                            className={`w-full py-3.5 font-bold tracking-widest uppercase transition-all duration-300 transform rounded-xl border border-transparent hover:-translate-y-0.5 ${popup.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-900 hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]' : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]'}`}
+                        >
+                            {popup.status === 'success' ? 'Awesome' : 'Close'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

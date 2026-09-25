@@ -16,12 +16,17 @@ from asgiref.sync import async_to_sync
 
 from .models import HallBooking
 from apps.salary.models import Transaction
-
 from .serializers import (
     CommunityHallSerializer, 
     HallBookingSerializer, 
     AdminHallUpdateSerializer
 )
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+
 
 
 class ManageCommunityHallsAPIView(APIView):
@@ -42,10 +47,8 @@ class ManageCommunityHallsAPIView(APIView):
             return Response({"error": "Only admins can add new halls."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = CommunityHallSerializer(data=request.data)
-        print(serializer)
         if serializer.is_valid():
             hall = serializer.save(community=request.user.community, is_active=True)
-            print(hall)
             
             images_data = request.FILES.getlist('images') 
             for image_data in images_data:

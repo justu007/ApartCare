@@ -1,6 +1,7 @@
 
 
 import React, { useState } from 'react';
+import {validateStrongPassword} from '../../utils/validators'
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -16,20 +17,37 @@ const ResetPasswordConfirm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessage(''); setError('');
+        setMessage(''); 
+        setError('');
 
-        if (newPassword !== confirmPassword) return setError("Passwords do not match!");
-        if (newPassword.length < 8) return setError("Password must be at least 8 characters long.");
+        if (newPassword !== confirmPassword) {
+            return setError("Passwords do not match!");
+        }
+
+        const strengthError = validateStrongPassword(newPassword);
+        if (strengthError) {
+            return setError(strengthError);
+        }
 
         setLoading(true);
         try {
             await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/reset-password/`, {
-                uid: uid, token: token, new_password: newPassword
+                uid: uid, 
+                token: token, 
+                new_password: newPassword
             });
             setMessage("Password reset successfully! Redirecting to login...");
             setTimeout(() => { navigate('/'); }, 2000);
         } catch (err) {
-            setError(err.response?.data?.error || "Failed to reset password. The link may be expired.");
+            // Safely extract backend field or non-field validation errors
+            const backendError = 
+                err.response?.data?.new_password?.[0] ||
+                err.response?.data?.non_field_errors?.[0] ||
+                err.response?.data?.error ||
+                err.response?.data?.detail ||
+                "Failed to reset password. The link may be expired.";
+
+            setError(backendError);
         } finally {
             setLoading(false);
         }
