@@ -41,3 +41,5 @@ tzdata==2025.2
 ujson==5.12.1
 urllib3==2.7.0
 zope.interface==8.5
+whitenoise>=6.5.0
+

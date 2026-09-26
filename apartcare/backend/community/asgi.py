@@ -1,27 +1,23 @@
-"""
-ASGI config for community project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
-"""
-
 import os
+import django
 from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
-from apps.notification.routing import websocket_urlpatterns 
 
-
-from apps.notification.routing import websocket_urlpatterns 
-from .middleware import JWTAuthCookieMiddleware 
-
+# 1. Set the default Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'community.settings')
 
+# 2. Initialize Django registry and HTTP ASGI application FIRST
+django.setup()
+django_asgi_app = get_asgi_application()
+
+# 3. ONLY import Channels and your app's routing AFTER django.setup()
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from apps.notification.routing import websocket_urlpatterns
+
+# 4. Define the ASGI application
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": JWTAuthCookieMiddleware(  
+    "http": django_asgi_app,
+    "websocket": AuthMiddlewareStack(
         URLRouter(
             websocket_urlpatterns
         )

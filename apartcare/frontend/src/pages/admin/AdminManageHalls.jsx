@@ -1,7 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getCommunityHalls, createCommunityHall, updateCommunityHall, getAllHallBookings, updateBookingStatus } from '../../Api/hallbooking'; 
+import { getCommunityHalls, 
+    createCommunityHall, 
+    updateCommunityHall, 
+    getAllHallBookings, 
+    updateBookingStatus } from '../../api/hallbooking'; 
 
 const AdminManageHalls = () => {
     const location = useLocation();

@@ -18,24 +18,30 @@ services:
     image: redis:7-alpine
     container_name: apartcare_redis
     restart: always
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
 
   # 3. Backend (Django / Daphne ASGI)
   backend:
+
+    env_file:
+      - .env  
     build:
       context: ./apartcare/backend
       dockerfile: Dockerfile
     container_name: apartcare_backend
     restart: always
     command: >
-      sh -c "python manage.py migrate &&
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
              daphne -b 0.0.0.0 -p 8000 community.asgi:application"
     volumes:
       - ./apartcare/backend:/app
     ports:
       - "8000:8000"
     environment:
+      - DJANGO_SETTINGS_MODULE=community.settings
       - SECRET_KEY=${SECRET_KEY}
       - DEBUG=${DEBUG}
       - DB_NAME=${DB_NAME}
